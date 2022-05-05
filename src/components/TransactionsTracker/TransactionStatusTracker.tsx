@@ -13,7 +13,8 @@ import { SignedTransactionsBodyType } from 'types/transactions';
 import {
   getIsTransactionCompleted,
   getIsTransactionFailed,
-  getIsTransactionPending
+  getIsTransactionPending,
+  getIsTransactionTimedOut
 } from 'utils';
 import { refreshAccount } from 'utils/account';
 interface RetriesType {
@@ -101,23 +102,26 @@ export function TransactionStatusTracker({
           if (!invalidTransaction) {
             if (!getIsTransactionPending(status)) {
               if (!getIsTransactionCompleted(status)) {
-                if (!pendingResults) {
-                  timeoutRefs.current.push(hash);
+                if (
+                  !getIsTransactionFailed(status) &&
+                  !getIsTransactionTimedOut(status)
+                ) {
+                  if (!pendingResults) {
+                    timeoutRefs.current.push(hash);
 
-                  const transitionToCompletedDelay =
-                    customTransactionInformation?.completedTransactionsDelay ||
-                    0;
-                  setTimeout(
-                    () =>
+                    const transitionToCompletedDelay =
+                      customTransactionInformation?.completedTransactionsDelay ||
+                      0;
+                    setTimeout(() => {
                       dispatch(
                         updateSignedTransactionStatus({
                           sessionId,
                           status: TransactionServerStatusesEnum.completed,
                           transactionHash: hash
                         })
-                      ),
-                    transitionToCompletedDelay
-                  );
+                      );
+                    }, transitionToCompletedDelay);
+                  }
                 }
               }
 
@@ -134,7 +138,7 @@ export function TransactionStatusTracker({
               refreshAccount();
 
               if (getIsTransactionFailed(status)) {
-                const resultWithError = results.find(
+                const resultWithError = results?.find(
                   (scResult) => scResult?.returnMessage !== ''
                 );
 
