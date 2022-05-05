@@ -8,8 +8,8 @@ node_modules
 .DS_Store
 
 # builds
-# build
-# dist
+build
+dist
 .idea
 .idea/workspace.xml
 .rpt2_cache
