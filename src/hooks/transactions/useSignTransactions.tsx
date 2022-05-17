@@ -222,7 +222,7 @@ export const useSignTransactions = () => {
 
   useEffect(() => {
     if (prevSessionIdRef.current && sessionId) {
-      onAbort();
+      onAbort(prevSessionIdRef.current);
     }
     prevSessionIdRef.current = sessionId;
     signTransactions();
