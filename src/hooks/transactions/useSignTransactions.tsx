@@ -129,7 +129,7 @@ export const useSignTransactions = () => {
       const shouldMoveTransactionsToSignedState =
         signedTransactions &&
         hasAllTransactionsSigned &&
-        signingIdRef.current === sessionId;
+        !!signingTxRef.current;
       console.log(
         'after signed',
         signingTxRef.current,
