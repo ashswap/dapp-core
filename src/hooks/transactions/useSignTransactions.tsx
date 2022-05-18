@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ExtensionProvider, Nonce, Transaction } from '@elrondnetwork/erdjs';
 
 import { errorsMessages, walletSignSession } from 'constants/index';
@@ -29,7 +29,7 @@ export const useSignTransactions = () => {
   const [error, setError] = useState<string | null>(null);
   const transactionsToSign = useSelector(transactionsToSignSelector);
   const hasTransactions = Boolean(transactionsToSign?.transactions);
-
+  const prevSessionIdRef = useRef<string>();
   useParseSignedTransactions();
 
   const onAbort = (sessionId?: string) => {
@@ -216,9 +216,17 @@ export const useSignTransactions = () => {
     }
   };
 
+  const sessionId = useMemo(() => transactionsToSign?.sessionId, [
+    transactionsToSign
+  ]);
+
   useEffect(() => {
+    if (prevSessionIdRef.current && sessionId) {
+      onAbort(prevSessionIdRef.current);
+    }
+    prevSessionIdRef.current = sessionId;
     signTransactions();
-  }, [transactionsToSign]);
+  }, [sessionId]);
 
   return {
     error,
