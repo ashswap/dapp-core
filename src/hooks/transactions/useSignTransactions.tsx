@@ -142,6 +142,7 @@ export const useSignTransactions = () => {
         return;
       }
       signingIdRef.current = '';
+      clearSignInfo();
 
       const signedTransactionsArray = Object.values(
         signedTransactions
