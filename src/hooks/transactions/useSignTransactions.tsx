@@ -118,7 +118,9 @@ export const useSignTransactions = () => {
     }
 
     try {
+      console.log('before sign');
       const signedTransactions = await provider.signTransactions(transactions);
+      console.log('after sign');
       const hasSameTransactions =
         Object.keys(signedTransactions).length === transactions.length;
       const hasAllTransactionsSigned =
