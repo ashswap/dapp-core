@@ -92,13 +92,13 @@ export const useSignTransactions = () => {
       });
   };
 
-  const signTransactionsWithProvider = async () => {
+  const signTransactionsWithProvider = async (txTosign: TransactionsToSignReturnType) => {
     const {
       sessionId,
       transactions,
       callbackRoute,
       customTransactionInformation
-    } = transactionsToSign!;
+    } = txTosign;
     const { redirectAfterSign } = customTransactionInformation;
     const redirectRoute = callbackRoute || window.location.pathname;
     const isCurrentRoute = window.location.pathname.includes(redirectRoute);
@@ -132,6 +132,8 @@ export const useSignTransactions = () => {
         !!signingTxRef.current;
       console.log(
         'after signed',
+        transactionsToSign,
+        txTosign,
         signingTxRef.current,
         signingIdRef.current,
         sessionId,
@@ -224,7 +226,7 @@ export const useSignTransactions = () => {
         signWithWallet(mappedTransactions, sessionId, callbackRoute);
       }
       if (isSigningWithProvider) {
-        signTransactionsWithProvider();
+        signTransactionsWithProvider(transactionsToSign);
       }
     } catch (err) {
       const defaultErrorMessage = ((error as unknown) as Error)?.message;
