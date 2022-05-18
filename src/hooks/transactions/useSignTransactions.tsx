@@ -216,6 +216,7 @@ export const useSignTransactions = () => {
       );
       signingTxRef.current = transactionsToSign;
       signingIdRef.current = transactionsToSign.sessionId;
+      console.log('start signing');
 
       if (isSigningWithWebWallet) {
         signWithWallet(mappedTransactions, sessionId, callbackRoute);
