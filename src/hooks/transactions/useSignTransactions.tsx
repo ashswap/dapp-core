@@ -92,7 +92,9 @@ export const useSignTransactions = () => {
       });
   };
 
-  const signTransactionsWithProvider = async (txTosign: TransactionsToSignReturnType) => {
+  const signTransactionsWithProvider = async (
+    txTosign: TransactionsToSignReturnType
+  ) => {
     const {
       sessionId,
       transactions,
@@ -129,7 +131,7 @@ export const useSignTransactions = () => {
       const shouldMoveTransactionsToSignedState =
         signedTransactions &&
         hasAllTransactionsSigned &&
-        !!signingTxRef.current;
+        signingTxRef.current?.sessionId === txTosign.sessionId;
       console.log(
         'after signed',
         transactionsToSign,
