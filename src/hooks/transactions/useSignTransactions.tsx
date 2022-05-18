@@ -37,6 +37,7 @@ export const useSignTransactions = () => {
     [transactionsToSign]
   );
   const signingTxRef = useRef<TransactionsToSignReturnType | null>(null);
+  const signingIdRef = useRef<string>();
   useParseSignedTransactions();
 
   const onAbort = (sessionId?: string) => {
@@ -87,6 +88,7 @@ export const useSignTransactions = () => {
       })
       .finally(() => {
         signingTxRef.current = null;
+        signingIdRef.current = '';
       });
   };
 
@@ -127,10 +129,11 @@ export const useSignTransactions = () => {
       const shouldMoveTransactionsToSignedState =
         signedTransactions &&
         hasAllTransactionsSigned &&
-        signingTxRef.current?.sessionId === sessionId;
+        signingIdRef.current === sessionId;
       console.log(
         'after signed',
         signingTxRef.current,
+        signingIdRef.current,
         sessionId,
         shouldMoveTransactionsToSignedState
       );
@@ -162,6 +165,7 @@ export const useSignTransactions = () => {
       onCancel(errorMessage, sessionId);
     } finally {
       signingTxRef.current = null;
+      signingIdRef.current = '';
     }
   };
 
@@ -214,6 +218,7 @@ export const useSignTransactions = () => {
         transactions
       );
       signingTxRef.current = transactionsToSign;
+      signingIdRef.current = transactionsToSign.sessionId;
 
       if (isSigningWithWebWallet) {
         signWithWallet(mappedTransactions, sessionId, callbackRoute);
