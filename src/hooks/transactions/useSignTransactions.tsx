@@ -142,7 +142,6 @@ export const useSignTransactions = () => {
         return;
       }
       signingIdRef.current = '';
-      clearSignInfo();
 
       const signedTransactionsArray = Object.values(
         signedTransactions
@@ -254,6 +253,12 @@ export const useSignTransactions = () => {
     console.log('sign transaction effect');
     signTransactions();
   }, [sessionId]);
+
+  useEffect(() => {
+    return () => {
+      clearSignInfo();
+    };
+  }, []);
 
   return {
     error,
