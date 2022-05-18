@@ -7,7 +7,11 @@ import { getAccountProvider } from 'providers/accountProvider';
 import { getAccountFromProxyProvider } from 'providers/proxyProvider';
 import { getProviderType } from 'providers/utils';
 import { useDispatch, useSelector } from 'redux/DappProviderContext';
-import { addressSelector, transactionsToSignSelector } from 'redux/selectors';
+import {
+  addressSelector,
+  TransactionsToSignReturnType,
+  transactionsToSignSelector
+} from 'redux/selectors';
 import {
   clearAllTransactionsToSign,
   clearTransactionsInfoForSessionId,
@@ -28,8 +32,11 @@ export const useSignTransactions = () => {
   const providerType = getProviderType(provider);
   const [error, setError] = useState<string | null>(null);
   const transactionsToSign = useSelector(transactionsToSignSelector);
-  const hasTransactions = Boolean(transactionsToSign?.transactions);
-  const prevSessionIdRef = useRef<string>();
+  const hasTransactions = useMemo(
+    () => Boolean(transactionsToSign?.transactions),
+    [transactionsToSign]
+  );
+  const signingTxRef = useRef<TransactionsToSignReturnType | null>(null);
   useParseSignedTransactions();
 
   const onAbort = (sessionId?: string) => {
@@ -74,10 +81,13 @@ export const useSignTransactions = () => {
     const urlParams = { [walletSignSession]: sessionId };
     const callbackUrl = `${window.location.origin}${callbackRoute}`;
     const buildedCallbackUrl = builtCallbackUrl({ callbackUrl, urlParams });
-
-    provider.signTransactions(transactions, {
-      callbackUrl: encodeURIComponent(buildedCallbackUrl)
-    });
+    provider
+      .signTransactions(transactions, {
+        callbackUrl: encodeURIComponent(buildedCallbackUrl)
+      })
+      .finally(() => {
+        signingTxRef.current = null;
+      });
   };
 
   const signTransactionsWithProvider = async () => {
@@ -115,7 +125,9 @@ export const useSignTransactions = () => {
       const hasAllTransactionsSigned =
         signedTransactions && hasSameTransactions;
       const shouldMoveTransactionsToSignedState =
-        signedTransactions && hasAllTransactionsSigned;
+        signedTransactions &&
+        hasAllTransactionsSigned &&
+        signingTxRef.current?.sessionId === sessionId;
 
       if (!shouldMoveTransactionsToSignedState) {
         return;
@@ -143,10 +155,13 @@ export const useSignTransactions = () => {
         errorsMessages.ERROR_SIGNING_TX;
       console.error(errorsMessages.ERROR_SIGNING_TX, errorMessage);
       onCancel(errorMessage, sessionId);
+    } finally {
+      signingTxRef.current = null;
     }
   };
 
   const signTransactions = async () => {
+    console.log('before sign transaction', transactionsToSign);
     if (!transactionsToSign) {
       return;
     }
@@ -193,6 +208,7 @@ export const useSignTransactions = () => {
         latestNonce,
         transactions
       );
+      signingTxRef.current = transactionsToSign;
 
       if (isSigningWithWebWallet) {
         signWithWallet(mappedTransactions, sessionId, callbackRoute);
@@ -221,10 +237,10 @@ export const useSignTransactions = () => {
   ]);
 
   useEffect(() => {
-    if (prevSessionIdRef.current && sessionId) {
-      onAbort(prevSessionIdRef.current);
-    }
-    prevSessionIdRef.current = sessionId;
+    // if (signingTxRef.current) {
+    //   onAbort(signingTxRef.current.sessionId);
+    // }
+    console.log('sign transaction effect');
     signTransactions();
   }, [sessionId]);
 
