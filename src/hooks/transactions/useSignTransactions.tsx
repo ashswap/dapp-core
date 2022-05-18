@@ -82,14 +82,9 @@ export const useSignTransactions = () => {
     const urlParams = { [walletSignSession]: sessionId };
     const callbackUrl = `${window.location.origin}${callbackRoute}`;
     const buildedCallbackUrl = builtCallbackUrl({ callbackUrl, urlParams });
-    provider
-      .signTransactions(transactions, {
-        callbackUrl: encodeURIComponent(buildedCallbackUrl)
-      })
-      .finally(() => {
-        signingTxRef.current = null;
-        signingIdRef.current = '';
-      });
+    provider.signTransactions(transactions, {
+      callbackUrl: encodeURIComponent(buildedCallbackUrl)
+    });
   };
 
   const signTransactionsWithProvider = async (
@@ -131,7 +126,7 @@ export const useSignTransactions = () => {
       const shouldMoveTransactionsToSignedState =
         signedTransactions &&
         hasAllTransactionsSigned &&
-        signingTxRef.current?.sessionId === txTosign.sessionId;
+        signingIdRef.current === txTosign.sessionId;
       console.log(
         'after signed',
         transactionsToSign,
@@ -144,6 +139,7 @@ export const useSignTransactions = () => {
       if (!shouldMoveTransactionsToSignedState) {
         return;
       }
+      signingIdRef.current = '';
 
       const signedTransactionsArray = Object.values(
         signedTransactions
@@ -167,9 +163,6 @@ export const useSignTransactions = () => {
         errorsMessages.ERROR_SIGNING_TX;
       console.error(errorsMessages.ERROR_SIGNING_TX, errorMessage);
       onCancel(errorMessage, sessionId);
-    } finally {
-      signingTxRef.current = null;
-      signingIdRef.current = '';
     }
   };
 
