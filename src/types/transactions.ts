@@ -1,12 +1,18 @@
 import React from 'react';
 import { Address, Transaction } from '@elrondnetwork/erdjs';
+import { IPlainTransactionObject } from '@elrondnetwork/erdjs/out/interface';
 import {
   TransactionBatchStatusesEnum,
-  TransactionServerStatusesEnum
+  TransactionServerStatusesEnum,
+  TransactionTypesEnum
 } from './enums';
+import {
+  GetTransactionsByHashesReturnType,
+  PendingTransactionsType
+} from 'apiCalls';
 
 export interface TransactionsToSignType {
-  transactions: RawTransactionType[];
+  transactions: IPlainTransactionObject[];
   callbackRoute?: string;
   sessionId: string;
   customTransactionInformation: CustomTransactionInformation;
@@ -31,19 +37,7 @@ export interface TransactionParameter {
   outputParameters: string[];
 }
 
-export interface RawTransactionType {
-  signature?: string;
-  value: string;
-  receiver: string;
-  gasPrice: number;
-  gasLimit: number;
-  sender: string;
-  nonce: number;
-  data: string;
-  chainID: string;
-  version?: number;
-  options?: number;
-}
+export type RawTransactionType = IPlainTransactionObject;
 
 export interface SignedTransactionType extends RawTransactionType {
   hash: string;
@@ -146,15 +140,6 @@ export interface SignTransactionsPropsType {
   customTransactionInformation: CustomTransactionInformation;
 }
 
-export enum TransactionTypesEnum {
-  MultiESDTNFTTransfer = 'MultiESDTNFTTransfer',
-  ESDTTransfer = 'ESDTTransfer',
-  ESDTNFTTransfer = 'ESDTNFTTransfer',
-  esdtTransaction = 'esdtTransaction',
-  nftTransaction = 'nftTransaction',
-  scCall = 'scCall'
-}
-
 export interface ActiveLedgerTransactionType {
   transaction: Transaction;
   transactionTokenInfo: TxDataTokenType;
@@ -196,3 +181,12 @@ export interface CustomTransactionInformation {
   completedTransactionsDelay?: number;
   signWithoutSending: boolean;
 }
+
+export interface SendTransactionReturnType {
+  error?: string;
+  sessionId: string | null;
+}
+
+export type GetTransactionsByHashesType = (
+  pendingTransactions: PendingTransactionsType
+) => Promise<GetTransactionsByHashesReturnType>;

@@ -7,11 +7,14 @@ declare module '*.css' {
   export default content;
 }
 
-type SvgrComponent = React.StatelessComponent<React.SVGAttributes<SVGElement>>;
+type SvgrComponent = React.FunctionComponent<
+  React.PropsWithChildren<
+    React.PropsWithChildren<React.SVGAttributes<SVGElement>>
+  >
+>;
 
 declare module '*.svg' {
   const svgUrl: string;
   const svgComponent: SvgrComponent;
-  export default svgUrl;
-  export { svgComponent as ReactComponent };
+  export default svgComponent;
 }

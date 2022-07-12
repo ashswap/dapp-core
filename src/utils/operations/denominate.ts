@@ -1,8 +1,8 @@
-import { Balance, Token } from '@elrondnetwork/erdjs';
+import { TokenPayment } from '@elrondnetwork/erdjs';
 import BigNumber from 'bignumber.js';
 import {
-  denomination as configDenomination,
-  decimals as configDecimals
+  decimals as configDecimals,
+  denomination as configDenomination
 } from 'constants/index';
 import { stringIsInteger } from 'utils/validation';
 import pipe from './pipe';
@@ -17,29 +17,35 @@ export function denominate({
   showIsLessThanDecimalsLabel = false,
   addCommas = false
 }: {
-  input: string | Balance;
+  input: string;
   denomination?: number;
   decimals?: number;
   showIsLessThanDecimalsLabel?: boolean;
   showLastNonZeroDecimal?: boolean;
   addCommas?: boolean;
 }) {
-  const token = new Token({ decimals: denomination });
-
-  if (typeof input === 'string' && !stringIsInteger(input, false)) {
+  if (!stringIsInteger(input, false)) {
     throw new Error('Invalid input');
   }
 
-  return (
-    pipe(input as string)
-      // denominate
-      .if(typeof input === 'string')
-      .then(() =>
-        new Balance(token, 0, new BigNumber(input as string)).toDenominated()
-      )
+  const isNegative = new BigNumber(input).isNegative();
+  let modInput = input;
 
-      .if(input.constructor === Balance)
-      .then(() => (input as Balance).toDenominated())
+  if (isNegative) {
+    // remove - at start of input
+    modInput = input.substring(1);
+  }
+
+  return (
+    pipe(modInput as string)
+      // denominate
+      .then(() =>
+        TokenPayment.fungibleFromBigInteger(
+          '',
+          modInput as string,
+          denomination
+        ).toRationalNumber()
+      )
 
       // format
       .then((current) => {
@@ -94,6 +100,10 @@ export function denominate({
               return `<${numericPart}.${minAmount}`;
             }
 
+            if (!showLastNonZeroDecimal) {
+              return numericPart;
+            }
+
             return `${numericPart}.${decimalSide}`;
           })
 
@@ -117,6 +127,8 @@ export function denominate({
 
         return formattedBalance;
       })
+      .if(isNegative)
+      .then((current) => `-${current}`)
 
       .valueOf()
   );

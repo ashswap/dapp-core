@@ -3,8 +3,7 @@ export enum TransactionServerStatusesEnum {
   'fail' = 'fail',
   'invalid' = 'invalid',
   'success' = 'success',
-  'executed' = 'executed',
-  'completed' = 'completed'
+  'executed' = 'executed'
 }
 
 export enum TransactionBatchStatusesEnum {
@@ -40,4 +39,18 @@ export enum EnvironmentsEnum {
   testnet = 'testnet',
   devnet = 'devnet',
   mainnet = 'mainnet'
+}
+
+export enum ToastsEnum {
+  custom = 'custom',
+  transaction = 'transaction'
+}
+
+export enum TransactionTypesEnum {
+  MultiESDTNFTTransfer = 'MultiESDTNFTTransfer',
+  ESDTTransfer = 'ESDTTransfer',
+  ESDTNFTTransfer = 'ESDTNFTTransfer',
+  esdtTransaction = 'esdtTransaction',
+  nftTransaction = 'nftTransaction',
+  scCall = 'scCall'
 }

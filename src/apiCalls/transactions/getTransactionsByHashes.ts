@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { networkConfigSelector } from 'redux/selectors';
-import { store } from 'redux/store';
+import { apiAddressSelector } from 'reduxStore/selectors';
+import { store } from 'reduxStore/store';
 import { SmartContractResult, TransactionServerStatusesEnum } from 'types';
 
 export type GetTransactionsByHashesReturnType = {
@@ -11,7 +11,6 @@ export type GetTransactionsByHashesReturnType = {
   sender: string;
   receiver: string;
   data: string;
-  pendingResults?: boolean;
   previousStatus: string;
   hasStatusChanged: boolean;
 }[];
@@ -24,17 +23,14 @@ export type PendingTransactionsType = {
 export async function getTransactionsByHashes(
   pendingTransactions: PendingTransactionsType
 ): Promise<GetTransactionsByHashesReturnType> {
-  const networkConfig = networkConfigSelector(store.getState());
+  const apiAddress = apiAddressSelector(store.getState());
   const hashes = pendingTransactions.map((tx) => tx.hash);
-  const { data: responseData } = await axios.get(
-    `${networkConfig.network.apiAddress}/transactions`,
-    {
-      params: {
-        hashes: hashes.join(','),
-        withScResults: true
-      }
+  const { data: responseData } = await axios.get(`${apiAddress}/transactions`, {
+    params: {
+      hashes: hashes.join(','),
+      withScResults: true
     }
-  );
+  });
   return pendingTransactions.map(({ hash, previousStatus }) => {
     const txOnNetwork = responseData.find(
       (txResponse: any) => txResponse?.txHash === hash
@@ -48,9 +44,8 @@ export async function getTransactionsByHashes(
       results: txOnNetwork.results,
       sender: txOnNetwork.sender,
       receiver: txOnNetwork?.receiver,
-      pendingResults: txOnNetwork.pendingResults,
       previousStatus,
-      hasStatusChanged: status !== previousStatus
+      hasStatusChanged: txOnNetwork.status !== previousStatus
     };
   });
 }
