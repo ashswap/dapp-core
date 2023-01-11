@@ -5,9 +5,9 @@
   "author": "ElrondNetwork",
   "license": "GPL-3.0-or-later",
   "repository": "ElrondNetwork/dapp-core",
-  "main": "./dist/__commonjs",
-  "browser": "./dist",
-  "react-native": "./dist",
+  "main": "dist/__commonjs",
+  "browser": "dist",
+  "react-native": "dist",
   "engines": {
     "node": ">=16"
   },
