@@ -5,9 +5,9 @@
   "author": "ElrondNetwork",
   "license": "GPL-3.0-or-later",
   "repository": "ElrondNetwork/dapp-core",
-  "main": "dist/__commonjs",
-  "browser": "dist",
-  "react-native": "dist",
+  "main": "./__commonjs",
+  "browser": "./",
+  "react-native": "./",
   "engines": {
     "node": ">=16"
   },
@@ -22,7 +22,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "prepare": "yarn build"
+    "prepare": "yarn build && mv dist/* ./"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "5.16.2",
