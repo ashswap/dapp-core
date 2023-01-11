@@ -1,7 +1,14 @@
 import BigNumber from 'bignumber.js';
 
 export const stringIsFloat = (amount: string) => {
-  // tslint:disable-next-line
+  if (isNaN(amount as any)) {
+    return false;
+  }
+  if (String(amount).includes('Infinity')) {
+    return false;
+  }
+
+  // eslint-disable-next-line
   let [wholes, decimals] = amount.split('.');
   if (decimals) {
     while (decimals.charAt(decimals.length - 1) === '0') {

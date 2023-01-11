@@ -1,16 +1,12 @@
 import {
   Transaction,
-  Nonce,
-  Balance,
-  GasPrice,
-  GasLimit,
   TransactionPayload,
-  ChainID,
   TransactionVersion,
-  Address,
-  NetworkConfig,
-  GasPriceModifier
+  Address
 } from '@elrondnetwork/erdjs';
+import { TokenPayment } from '@elrondnetwork/erdjs';
+import { NetworkConfig } from '@elrondnetwork/erdjs-network-providers';
+import { GAS_LIMIT, GAS_PRICE } from 'constants/index';
 import { stringIsFloat, stringIsInteger } from 'utils/validation';
 
 interface CalculateFeeLimitType {
@@ -28,35 +24,34 @@ const placeholderData = {
   to: 'erd12dnfhej64s6c56ka369gkyj3hwv5ms0y5rxgsk2k7hkd2vuk7rvqxkalsa'
 };
 export function calculateFeeLimit({
-  minGasLimit = '50000',
+  minGasLimit = String(GAS_LIMIT),
   gasLimit,
   gasPrice,
   data: inputData,
   gasPerDataByte,
   gasPriceModifier,
-  defaultGasPrice = '1000000000',
+  defaultGasPrice = String(GAS_PRICE),
   chainId
 }: CalculateFeeLimitType) {
   const data = inputData || '';
   const validGasLimit = stringIsInteger(gasLimit) ? gasLimit : minGasLimit;
   const validGasPrice = stringIsFloat(gasPrice) ? gasPrice : defaultGasPrice;
   const transaction = new Transaction({
-    nonce: new Nonce(0),
-    value: Balance.Zero(),
+    nonce: 0,
+    value: TokenPayment.egldFromAmount('0'),
     receiver: new Address(placeholderData.to),
-    gasPrice: new GasPrice(parseInt(validGasPrice)),
-    gasLimit: new GasLimit(parseInt(validGasLimit)),
+    sender: new Address(placeholderData.to),
+    gasPrice: parseInt(validGasPrice),
+    gasLimit: parseInt(validGasLimit),
     data: new TransactionPayload(data.trim()),
-    chainID: new ChainID(chainId),
+    chainID: chainId,
     version: new TransactionVersion(1)
   });
 
   const networkConfig = new NetworkConfig();
-  networkConfig.MinGasLimit = new GasLimit(parseInt(minGasLimit));
+  networkConfig.MinGasLimit = parseInt(minGasLimit);
   networkConfig.GasPerDataByte = parseInt(gasPerDataByte);
-  networkConfig.GasPriceModifier = new GasPriceModifier(
-    parseFloat(gasPriceModifier)
-  );
+  networkConfig.GasPriceModifier = parseFloat(gasPriceModifier);
   try {
     const bNfee = transaction.computeFee(networkConfig);
     const fee = bNfee.toString(10);

@@ -1,10 +1,29 @@
-import React, { Fragment, useState } from 'react';
-import { getGeneratedClasses } from 'utils';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-import WalletConnectLoginContainer from '../WalletConnectLoginContainer';
-import { WalletConnectLoginButtonPropsType } from './types';
+import React, { Fragment, ReactNode, useState } from 'react';
+import { useDappModal } from 'UI/DappModal';
+import { LoginButton } from '../../LoginButton/LoginButton';
+import { WalletConnectLoginContainer } from '../WalletConnectLoginContainer';
+import { WithClassnameType } from '../../types';
 
-const WalletConnectLoginButton = ({
+export interface WalletConnectLoginButtonPropsType extends WithClassnameType {
+  onModalOpens?: (props?: any) => void;
+  onModalCloses?: (props?: any) => void;
+  children?: ReactNode;
+  lead?: string;
+  title?: string;
+  modalClassName?: string;
+  logoutRoute?: string;
+  callbackRoute?: string;
+  loginButtonText?: string;
+  buttonClassName?: string;
+  wrapContentInsideModal?: boolean;
+  hideButtonWhenModalOpens?: boolean;
+  token?: string;
+  isWalletConnectV2?: boolean;
+  onLoginRedirect?: (callbackRoute: string) => void;
+  disabled?: boolean;
+}
+
+export const WalletConnectLoginButton = ({
   children,
   callbackRoute,
   onModalOpens,
@@ -12,65 +31,61 @@ const WalletConnectLoginButton = ({
   loginButtonText = 'Maiar App',
   title = 'Maiar Login',
   logoutRoute = '/unlock',
-  shouldRenderDefaultCss = true,
   wrapContentInsideModal = true,
-  redirectAfterLogin = false,
-  buttonClassName,
-  className = 'wallect-connect-login',
+  buttonClassName = 'dapp-wallet-connect-login-button',
+  className = 'dapp-wallet-connect-login',
+  modalClassName,
   lead = 'Scan the QR code using Maiar',
   token,
-  hideButtonWhenModalOpens = false
+  hideButtonWhenModalOpens = false,
+  isWalletConnectV2 = false,
+  onLoginRedirect,
+  disabled
 }: WalletConnectLoginButtonPropsType) => {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const generatedClasses = getGeneratedClasses(
-    className,
-    shouldRenderDefaultCss,
-    {
-      wrapper: `btn btn-primary px-sm-4 m-1 mx-sm-3 ${
-        buttonClassName != null ? buttonClassName : ''
-      }`,
-      loginText: 'text-left'
-    }
-  );
+  const [canShowLoginModal, setCanShowLoginModal] = useState(false);
+  const { handleShowModal, handleHideModal } = useDappModal();
 
   const handleOpenModal = () => {
-    setShowLoginModal(true);
+    setCanShowLoginModal(true);
+    handleShowModal();
     onModalOpens?.();
   };
 
   const handleCloseModal = () => {
-    setShowLoginModal(false);
+    setCanShowLoginModal(false);
+    handleHideModal();
     onModalCloses?.();
   };
 
-  const shouldRenderButton = !hideButtonWhenModalOpens || !showLoginModal;
+  const shouldRenderButton = !hideButtonWhenModalOpens || !canShowLoginModal;
   return (
     <Fragment>
       {shouldRenderButton && (
-        <button onClick={handleOpenModal} className={generatedClasses.wrapper}>
-          {children || (
-            <span className={generatedClasses.loginText}>
-              {loginButtonText}
-            </span>
-          )}
-        </button>
+        <LoginButton
+          onLogin={handleOpenModal}
+          className={className}
+          btnClassName={buttonClassName}
+          text={loginButtonText}
+          disabled={disabled}
+        >
+          {children}
+        </LoginButton>
       )}
-      {showLoginModal && (
+      {canShowLoginModal && (
         <WalletConnectLoginContainer
           callbackRoute={callbackRoute}
           loginButtonText={loginButtonText}
           title={title}
           token={token}
-          className={className}
+          className={modalClassName}
           logoutRoute={logoutRoute}
           lead={lead}
           wrapContentInsideModal={wrapContentInsideModal}
-          redirectAfterLogin={redirectAfterLogin}
+          isWalletConnectV2={isWalletConnectV2}
           onClose={handleCloseModal}
+          onLoginRedirect={onLoginRedirect}
         />
       )}
     </Fragment>
   );
 };
-
-export default withClassNameWrapper(WalletConnectLoginButton);

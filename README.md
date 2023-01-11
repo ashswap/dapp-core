@@ -34,6 +34,8 @@ or
 yarn add @elrondnetwork/dapp-core --no-optional
 ```
 
+### **If you're transitioning from dapp-core 1.x to dapp-core 2.0, please read the [Migration guide](https://github.com/ElrondNetwork/dapp-core/wiki/Migration-guide-2.0)**
+
 # Usage
 
 dapp-core aims to abstract and simplify the process of interacting with users' wallets and with the Elrond Network, allowing developers to easily get started with a new application or integrate dapp-core into an existing application.
@@ -42,9 +44,20 @@ This library covers two main areas: **User Identity** and **Transactions**. The 
 
 However, to simplify usage even further, the library also comes with a default UI that already uses these hooks and methods under the hood. These UI elements can be easily customized with custom css classes.
 
-The default UI is exposed via the `DappUI` object.
+The default UI is exposed via the `UI` module.
 
-`import { DappUI } from "@elrondnetwork/dapp-core";`
+`import * as DappUI from "@elrondnetwork/dapp-core/UI";`
+
+**Please be aware that this style of importing might also import unused code.**
+
+
+To reduce the amount of dead code, you can use named imports for each component like
+
+```
+import { UnlockPage } from "@elrondnetwork/dapp-core/UI/pages";
+or
+import { UnlockPage } from "@elrondnetwork/dapp-core/UI/pages/UnlockPage";
+```
 
 More on this below.
 
@@ -76,8 +89,11 @@ You need to wrap your application with the **DappProvider** component, which is 
 
 - import the Provider:
 
-`import { DappProvider } from "@elrondnetwork/dapp-core";`
-
+```
+import { DappProvider } from '@elrondnetwork/dapp-core/wrappers/DappProvider';
+or
+import { DappProvider } from '@elrondnetwork/dapp-core/wrappers';
+```
 - Wrap your application with this Provider.
 
 ```
@@ -86,7 +102,7 @@ You need to wrap your application with the **DappProvider** component, which is 
     customNetworkConfig={customNetworkConfig}
 >
 ```
-`environment` is a required key that is needed to configure the app's endpoints for a specific environment. Accepted values are `testnet`, `devnet` and `mainnet`
+`environment` is a required key that is needed to configure the app's endpoints for a specific environment. Accepted values are `testnet`, `devnet` and `mainnet` (also configured in `EnvironmentsEnum`)
 
 DappProvider also accepts an optional `customNetworkConfig` object with a couple of keys.
 This allows using different APIs and different connection providers to configure your network configuration.
@@ -98,8 +114,8 @@ This allows using different APIs and different connection providers to configure
   id?: string;
   name?: string;
   egldLabel?: string;
-  egldDenomination?: string;
   decimals?: string;
+  digits?: string;
   gasPerDataByte?: string;
   walletConnectDeepLink?: string; - a string that will create a deeplink for an application that is used on a mobile phone, instead of generating the login QR code.
   walletConnectBridgeAddresses?: string; - a string that is used to establish the connection to walletConnect library;
@@ -126,14 +142,13 @@ when something happens inside the app:
 - `TransactionsToastList` will display new transactions in nice toasts at the bottom of the screen. This component is fully customizable.
 
 ```
-  import {DappUI} from "@elrondnetwork/dapp-core";
+  import {TransactionsToastList} from "@elrondnetwork/dapp-core/UI/TransactionsToastList";
 
   <App>
-    <DappUI.TransactionsToastList
-    toastId?: string,
-    title: string,
-    shouldRenderDefaultCss?: boolean,
-    className?: string
+    <TransactionsToastList
+      toastId?: string,
+      title: string,
+      className?: string
     />
     <Content/>
   </App>
@@ -145,10 +160,10 @@ when something happens inside the app:
 **Important! This is required** to make transactions work, except when you use hooks to sign the transactions manually (more on this below).
 
 ```
-  import {DappUI} from "@elrondnetwork/dapp-core";
+  import {SignTransactionsModals} from "@elrondnetwork/dapp-core/UI/SignTransactionsModals";
 
   <App>
-    <DappUI.SignTransactionsModals />
+    <SignTransactionsModals />
     <Content/>
   </App>
 ```
@@ -156,36 +171,15 @@ when something happens inside the app:
 `NotificationModal` Will show a modal to the user with various warnings and errors.
 
 ```
-  import {DappUI} from "@elrondnetwork/dapp-core";
+  import {NotificationModal} from "@elrondnetwork/dapp-core/UI/NotificationModal";
 
   <App>
-    <DappUI.NotificationModal />
+    <NotificationModal />
     <Content/>
   </App>
 ```
 
 If you want to show custom notifications, you can use the `useGetNotification` hook to get the notifications (like insufficient funds, errors etc).
-
-</details>
-
-<details>
-  <summary>
-    UI css import
- </summary>
-
-### UI css import
-
-To properly apply the default styles to Dapp Core Components, you need to import the bundled css into your App's entry point.
-
-```
-import ...
-
-import '@elrondnetwork/dapp-core/build/index.css';
-
-export default function App() {
-...
-
-```
 
 </details>
 
@@ -198,7 +192,9 @@ A handy component is AuthenticatedRoutesWrapper, which can be used to protect ce
 Import from dapp-core:
 
 ```
-import { AuthenticatedRoutesWrapper} from "@elrondnetwork/dapp-core";
+import { AuthenticatedRoutesWrapper } from '@elrondnetwork/dapp-core/wrappers/AuthenticatedRoutesWrapper';
+or
+import { AuthenticatedRoutesWrapper } from '@elrondnetwork/dapp-core/wrappers';
 ```
 
 Use with routes:
@@ -206,7 +202,7 @@ Use with routes:
 ```
   <AuthenticatedRoutesWrapper
     routes={routes}
-    unlockRoute={routeNames.unlock}
+    unlockRoute="/unlock"
   >
     {appContent}
   </AuthenticatedRoutesWrapper>
@@ -237,15 +233,15 @@ There are a couple of very handy React components that can be used to login the 
 Under the `DappUI` object mentioned above, you can find 4 buttons (one for each provider) which abstract away all the logic of loggin in the user and render the default UI. These buttons can be easily customized with a custom css class.
 The exported buttons are:
 
-- DappUI.ExtensionLoginButton
-- DappUI.WalletConnectLoginButton
-- DappUI.LedgerLoginButton
-- DappUI.WebWalletLoginButton
+- ExtensionLoginButton
+- WalletConnectLoginButton
+- LedgerLoginButton
+- WebWalletLoginButton
 
 example:
 
 ```
-<DappUI.ExtensionLoginButton
+<ExtensionLoginButton
   callbackRoute="/dashboard"
   buttonClassName="extension-login"
   loginButtonText="Extension login"
@@ -255,7 +251,7 @@ example:
 They can also be used with children
 
 ```
-<DappUI.ExtensionLoginButton
+<ExtensionLoginButton
   callbackRoute="/dashboard"
   buttonClassName="extension-login"
   loginButtonText="Extension login"
@@ -264,7 +260,7 @@ They can also be used with children
     <icon/>
     <p>Login text</p>
   <>
-</DappUI.ExtensionLoginButton
+</ExtensionLoginButton
 ```
 
 `WalletConnectLoginButton` and `LedgerLoginButton` will trigger a modal with a QR code and the ledger login UI, respectively.
@@ -274,30 +270,31 @@ If, however, you want access to these containers without the buttons,
 you can easily import and use them.
 
 ```
-<DappUI.WalletConnectLoginContainer
+<WalletConnectLoginContainer
   callbackRoute={callbackRoute}
   loginButtonText="Login with Maiar"
-  title = 'Maiar Login',
-  logoutRoute = '/unlock',
-  className = 'wallect-connect-login-modal',
-  lead = 'Scan the QR code using Maiar',
-  shouldRenderDefaultCss={shouldRenderDefaultCss}
+  title='Maiar Login',
+  logoutRoute='/unlock',
+  className='wallect-connect-login-modal',
+  lead='Scan the QR code using Maiar',
   wrapContentInsideModal={wrapContentInsideModal}
   redirectAfterLogin={redirectAfterLogin}
   token={token}
+  onLoginRedirect={onLoginRedirect}
   onClose={onClose}
+  isWalletConnectV2={true} // by default is false and will use walletconnect version 1
   />
 ```
 
 ```
-<DappUI.LedgerLoginContainer
-  callbackRoute: string;
-  className?: string;
-  shouldRenderDefaultCss?: boolean;
-  wrapContentInsideModal?: boolean;
-  redirectAfterLogin?: boolean;
-  token?: string;
-  onClose?: () => void;
+<LedgerLoginContainer
+  callbackRoute={callbackRoute}
+  className='ledger-login-modal',
+  wrapContentInsideModal={wrapContentInsideModal}
+  redirectAfterLogin={redirectAfterLogin}
+  token={token}
+  onClose={onClose}
+  onLoginRedirect={onLoginRedirect}
   />
 ```
 
@@ -305,14 +302,12 @@ All login buttons and hooks accept a prop called `redirectAfterLogin` which spec
 The default value for this boolean is false, since most apps listen for the "isLoggedIn" boolean and redirect programmatically.
 
 
-Also, for a quicker setup, the `DappUI` object exports an `DappUI.UnlockPage` component, which contains all 4 buttons.
-
-Another handly component is DappUI.AuthenticatedRoutesWrapper, which can be used to protect certain routes and redirect the user to login page if the user is not authenticated.
+Another handly component is AuthenticatedRoutesWrapper, which can be used to protect certain routes and redirect the user to login page if the user is not authenticated.
 
 Import from dapp-core:
 
 ```
-import { AuthenticatedRoutesWrapper} from "@elrondnetwork/dapp-core";
+import { AuthenticatedRoutesWrapper } from '@elrondnetwork/dapp-core/wrappers/AuthenticatedRoutesWrapper';
 ```
 
 Use with routes:
@@ -349,10 +344,15 @@ Login hooks
 
 This area covers the login hooks, which expose a trigger function and the login data, ready to be rendered.
 
-These hooks are exposed by the `loginServices` object, which can be imported from dapp-core:
+These hooks are exposed as named exports, which can be imported from dapp-core:
 
 ```
-import {loginServices} from @elrondnetwork/dapp-core
+import { useExtensionLogin, useWalletConnectLogin, useLedgerLogin, useWebWalletLogin } from '@elrondnetwork/dapp-core/hooks';
+or
+import { useExtensionLogin } from '@elrondnetwork/dapp-core/hooks/login/useExtensionLogin';
+import { useWalletConnectLogin } from '@elrondnetwork/dapp-core/hooks/login/useWebWalletLogin';
+import { useLedgerLogin } from '@elrondnetwork/dapp-core/hooks/login/useLedgerLogin';
+import { useWebWalletLogin } from '@elrondnetwork/dapp-core/hooks/login/useWebWalletLogin';
 ```
 
 There are 4 available hooks:
@@ -367,9 +367,10 @@ All hooks have the same response signature:
 return type is as follows:
 
 ```
-const [triggerFunction, genericLoginReturnType, customLoginReturnType] = useLoginHook({
+const [initiateLogin, genericLoginReturnType, customLoginReturnType] = useLoginHook({
     callbackRoute,
-    logoutRoute
+    logoutRoute,
+    onLoginRedirect,
   });
 ```
 
@@ -468,7 +469,7 @@ const { sessionId, error } = await sendTransactions({
     minGasLimit?: number (optional, defaults to 50_000);
     sessionInformation?: any (optional, defaults to null) extra sessionInformation that will be passed back to you via getSignedTransactions hook;
     signWithoutSending?: boolean // (optional, defaults to false), the transaction will be signed without being sent to the blockchain;
-    completedTransactionsDelay?: number // delay the transaction status from going into "completed" state;
+    completedTransactionsDelay?: number // delay the transaction status from going into "successful" state;
     redirectAfterSigning?: boolean // (optional, defaults to true), whether to redirect to the provided callbackRoute;
     });
 ```
@@ -501,7 +502,8 @@ you have to use the `useSignTransactions` hook to sign those transactions.
     error,
     sessionId,
     onAbort,
-    hasTransactions
+    hasTransactions,
+    canceledTransactionsMessage
   } = useSignTransactions();
 ```
 
@@ -512,7 +514,7 @@ We suggest displaying a message on the screen that confirms the transaction that
 You can also get the provider via
 
 ```
-  const { providerType } = useGetAccountProvider();
+  const { providerType, provider } = useGetAccountProvider();
 ```
 
 and use that to display an appropriate message to the user.
@@ -554,7 +556,7 @@ and returns an object with the following keys:
           multiTxData?: string;
       };
       isTokenTransaction: boolean;
-      tokenDenomination: number;
+      tokenDecimals: number;
       dataField: string;
   };
   }
@@ -568,17 +570,16 @@ Tracking a transaction
 
 ### Tracking a transaction
 
-The library exposes a hook called useTrackTransactionStatus under the object `transactionServices`.
+The library exposes a hook called useTrackTransactionStatus;
 
 ```
-import {transactionServices} from @elrondnetwork/dapp-core;
+import {useTrackTransactionStatus} from @elrondnetwork/dapp-core/hooks;
 
-const transactionStatus = transactionServices.useTrackTransactionStatus({
+const transactionStatus = useTrackTransactionStatus({
   transactionId: sessionId,
   onSuccess,
   onFail,
   onCancelled,
-  onCompleted
 });
 ```
 
@@ -590,7 +591,6 @@ transactionStatus has the following information about the transaction:
   isSuccessful,
   isFailed,
   isCancelled,
-  isCompleted,
   errorMessage,
   status,
   transactions
@@ -607,14 +607,13 @@ Tracking transactions' statuses
 
 ### Tracking transactions' statuses
 
-Dapp-core also exposes a number of handy hooks for tracking all, pending, failed, successful, completed timed out transactions.
+Dapp-core also exposes a number of handy hooks for tracking all, pending, failed, successful and timed out transactions.
 
 Use:
 
 - `useGetPendingTransactions` to get a list of all pending transactions.
 - `useGetSuccessfulTransactions` to get a list of all successful transactions.
 - `useGetFailedTransactions` to get a list of all pending transactions.
-- `useGetCompletedTransactions` to get a list of smart contract call transactions that guarantee that the call was finished;
 
 An especially useful hook called `useGetActiveTransactionsStatus` will keep you updated with the status
 of all transactions at a certain point in time.
@@ -623,12 +622,11 @@ it's return signature is
 
 ```
 {
-  hasActiveTransactions: boolean - the user has at least 1 active transactions in one of the states described below;
   pending: boolean - at least one transaction is pending;
+  hasPendingTransactions: boolean - the user has at least 1 pending transaction active;
   timedOut: boolean = there are no pending transactions and at least one has timed out;
   fail: boolean - there are no pending and no timedOut transactions and at least one has failed;
-  success: boolean - there are no pending, failed or timedOut transactions;
-  completed: boolean - all transactions are successful and all smart contract calls have been processed successfully;
+  success: boolean - all transactions are successful and all smart contract calls have been processed successfully;
 }
 ```
 
@@ -642,16 +640,36 @@ Transaction Toasts UI
 
 dapp-core also exposes a toast component for tracking transactions that uses the above mentioned hooks and displays toasts with transactions statuses.
 
-The toasts list is exposed via **DappUI.TransactionsToastList** component and can be used just by rendering it inside the application.
+The toasts list is exposed via **TransactionsToastList** UI component and can be used just by rendering it inside the application.
+`TransactionToastList` component renders also custom toasts. A custom toast can be added using the util function: `addNewCustomToast` and can be removed using `deleteCustomToast`
+
+When `TransactionToastList` is also used for displaying custom toasts, is enough to call `addNewCustomToast` to add new custom toast to the list;
 
 ```
 <App>
   <Router/>
-  <DappUI.TransactionsToastList />
+  <TransactionsToastList />
 </App>
 ```
 
 **Important**: This has to be inside the `<DappProvider/>` children.
+
+In case you don't want to use `TransactionToastList` and just display a custom toast, then you have to import `CustomToast` component
+```
+const customToast = addNewCustomToast(
+  {
+    toastId: 'toast-id',
+    message: '',
+    type: 'custom',
+    duration: 2000
+  }
+);
+
+<CustomToast
+  {...customToast}
+  onDelete: () => deleteCustomToast(toastId)
+ />
+```
 
 </details>
 
@@ -664,14 +682,272 @@ Dapp-core takes care to change transactions' statuses and removes them when need
 but if you need to do this manually, you can use the exposed functions for this:
 
 ```
-transactionServices.removeTransactionsToSign(sessionId);
-transactionServices.removeSignedTransaction(sessionId);
-transactionServices.removeAllTransactionsToSign();
-transactionServices.removeAllSignedTransactions();
+  removeTransactionsToSign(sessionId);
+  removeSignedTransaction(sessionId);
+  removeAllTransactionsToSign();
+  removeAllSignedTransactions();
 
 ```
 
 </details>
+
+# Unit testing with Jest
+
+The dapp-core library exposes bundles for both CommonJS and ESModules, however, in some enviornments, Jest might require manual mapping of the CommonJS output. To implement it, add the following snippet inside your jest config file.
+
+```
+moduleNameMapper: {
+    '@elrondnetwork/dapp-core/(.*)':
+      '<rootDir>/node_modules/@elrondnetwork/dapp-core/__commonjs/$1.js'
+}
+```
+# Dapp-core exports
+
+Since version 2.0, dapp-core does not have a default export object.
+You have to import everything from its own separate module. Below you can find all the exports.
+
+You can either import everything from a module, or if you really want to make sure you're not importing anything
+that is not used, you can import everything from its own file.
+
+You can either go into their specific folder in the module for extra trimming, or import everything together.
+
+for example, these 2 imports are both valid:
+
+```
+import { useExtensionLogin, useGetAccountInfo } from '@elrondnetwork/dapp-core/hooks';
+```
+and
+```
+import { useExtensionLogin } from '@elrondnetwork/dapp-core/hooks/login';
+import { useGetAccountInfo } from '@elrondnetwork/dapp-core/hooks/account';
+
+```
+
+## constants exports
+
+```
+import {
+  GAS_PRICE_MODIFIER,
+  GAS_PER_DATA_BYTE,
+  GAS_LIMIT,
+  GAS_PRICE,
+  DECIMALS,
+  DIGITS,
+  mnemonicWords,
+  ledgerErrorCodes,
+  fallbackNetworkConfigurations
+ } from '@elrondnetwork/dapp-core/constants';
+```
+
+## hooks exports
+
+### Login
+
+```
+import {
+  useExtensionLogin,
+  useLedgerLogin,
+  useWalletConnectLogin,
+  useWebWalletLogin
+} from '@elrondnetwork/dapp-core/hooks/login';
+```
+
+### Account
+```
+import {
+  useGetAccountInfo,
+  useGetAccountProvider,
+  useGetLoginInfo
+ } from '@elrondnetwork/dapp-core/hooks/account';
+```
+
+### Transactions
+```
+import {
+  useCheckTransactionStatus,
+
+  useGetActiveTransactionsStatus,
+  useGetFailedTransactions,
+  useGetPendingTransactions,
+  useGetSignedTransactions,
+  useGetSignTransactionsError,
+  useGetSuccessfulTransactions,
+
+  useGetTokenDetails,
+  useGetTransactionDisplayInfo,
+  useParseMultiEsdtTransferData,
+
+  useParseSignedTransactions,
+  useSignMultipleTransactions,
+  useSignTransactions,
+  useSignTransactionsWithDevice,
+  useSignTransactionsWithLedger,
+} from '@elrondnetwork/dapp-core/hooks/transactions';
+```
+
+### Misc
+```
+import {
+  useDebounce,
+  useGetNetworkConfig,
+  useGetNotification,
+  useUpdateEffect
+} from '@elrondnetwork/dapp-core/hooks';
+```
+
+## services exports
+
+```
+import {
+  removeTransactionsToSign,
+  removeSignedTransaction,
+  removeAllSignedTransactions,
+  removeAllTransactionsToSign,
+  isCrossShardTransaction,
+  sendTransactions,
+  signTransactions,
+  calcTotalFee
+} from '@elrondnetwork/dapp-core/services';
+```
+
+## utils exports
+
+### Account
+
+```
+import {
+  addressIsValid,
+  getAccount,
+  getAccountBalance,
+  getAccountShard,
+  getAddress,
+  getLatestNonce,
+  getShardOfAddress,
+  refreshAccount,
+  setNonce,
+  signMessage
+} from '@elrondnetwork/dapp-core/utils/account';
+```
+
+### Operations
+
+```
+import {
+  calculateFeeLimit,
+  formatAmount,
+  nominate,
+  getUsdValue,
+} from '@elrondnetwork/dapp-core/utils/operations';
+```
+
+### Transactions
+
+```
+import {
+  getTokenFromData,
+  isTokenTransfer,
+  parseMultiEsdtTransferData,
+  parseTransactionAfterSigning,
+} from '@elrondnetwork/dapp-core/utils/transactions';
+```
+
+### Validation
+
+```
+import {
+ getIdentifierType,
+ stringIsFloat,
+ stringIsInteger,
+ isContract,
+ isStringBase64,
+} from '@elrondnetwork/dapp-core/utils';
+```
+
+### Misc
+
+```
+import {
+  encodeToBase64,
+  decodeBase64,
+  logout,
+  getTokenFromData,
+  getIsLoggedIn,
+  isSelfESDTContract,
+  getAddressFromDataField,
+} from '@elrondnetwork/dapp-core/utils';
+```
+
+## Wrappers
+
+```
+import {
+  DappProvider,
+  AuthenticatedRoutesWrapper,
+  AppInitializer,
+} from '@elrondnetwork/dapp-core/wrappers';
+```
+
+## Web-specific imports
+
+```
+import {
+  useIdleTimer
+} from '@elrondnetwork/dapp-core/web';
+```
+
+
+## UI
+
+```
+import {
+  CopyButton,
+  FormatAmount,
+  ExplorerLink,
+  ExtensionLoginButton,
+  LedgerLoginButton,
+  LedgerLoginContainer,
+  NotificationModal,
+  PageState,
+  ProgressSteps,
+  SignTransactionsModals,
+  SignWithDeviceModal,
+  SignWithExtensionModal,
+  SignWithLedgerModal,
+  TransactionsToastList,
+  TransactionToast,
+  Trim,
+  UsdValue,
+  WalletConnectLoginButton,
+  WalletConnectLoginContainer,
+} from '@elrondnetwork/dapp-core/UI';
+```
+
+or
+
+```
+import { CopyButton } from '@elrondnetwork/dapp-core/UI/CopyButton';
+import { FormatAmount } from '@elrondnetwork/dapp-core/UI/FormatAmount';
+import { ExplorerLink } from '@elrondnetwork/dapp-core/UI/ExplorerLink';
+
+etc
+```
+
+**Important**: `shouldRenderDefaultCss` was removed from all components.
+
+
+## React Native support
+
+We are aware that there are projects out there that would like to use this library to allow users to seamlessly authenticate with Maiar.
+
+You can use this library for its utility functions, like "formatAmount, parseAmount", mnemonic words list or its constants.
+
+However, certain architectural decisions that we made do not work out of the box with React Native runtime (neither Metro nor Re.pack).
+Due to this, you cannot yet use the DappProvider wrapping logic in a React Native application.
+
+We have a couple of solutions in mind and are actively working on exploring ways to overcome these limitations.
+Until then, you can use @elrondnetwork/erdjs libraries and @walletconnect to connect to Maiar.
+There are also guide for doing this from the [community](https://github.com/S4F-IT/maiar-integration/blob/master/README.md)
+
 
 ## Roadmap
 

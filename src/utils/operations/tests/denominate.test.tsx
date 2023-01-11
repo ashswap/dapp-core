@@ -1,4 +1,5 @@
-import denominate from './../denominate';
+import { denominate } from './../denominate';
+
 describe('denomination 4,4', () => {
   const numbers: { [key: string]: string } = {
     '9999999999999999999999990000': '999,999,999,999,999,999,999,999',
@@ -177,6 +178,14 @@ describe('denomination single tests', () => {
     });
     expect(result).toBe('<0.01');
   });
+  it('should not show decimals when result is below 1', () => {
+    const result = denominate({
+      input: (100_000_000_000_000).toString(),
+      showLastNonZeroDecimal: false,
+      decimals: 2
+    });
+    expect(result).toBe('0');
+  });
   it('should show zero decimals for integers with decimal amount too low', () => {
     const result = denominate({
       input: ['1', '000', '000', '001', '000', '000', '000', '000'].join(''),
@@ -212,5 +221,16 @@ describe('denomination single tests', () => {
       addCommas: false
     });
     expect(result).toBe('369884');
+  });
+
+  it('should show all 4 decimals', () => {
+    const result = denominate({
+      input: '995000000000000000',
+      denomination: 18,
+      decimals: 4,
+      showLastNonZeroDecimal: true,
+      addCommas: false
+    });
+    expect(result).toBe('0.9950');
   });
 });

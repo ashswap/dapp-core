@@ -1,35 +1,15 @@
-import React from 'react';
-
-import { Transaction } from '@elrondnetwork/erdjs';
+import React, { useCallback } from 'react';
 import { useGetLoginInfo } from 'hooks';
-import {
-  useGetAccountProvider,
-  useGetSignTransactionsError,
-  useSignTransactions
-} from 'hooks';
 import { LoginMethodsEnum } from 'types';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-import SignWithExtensionModal from './SignWithExtensionModal';
-import SignWithLedgerModal from './SignWithLedgerModal';
-import SignWithWalletConnectModal from './SignWithWalletConnectModal';
-
-interface SignPropsType {
-  handleClose: () => void;
-  error: string | null;
-  sessionId?: string;
-  transactions: Transaction[];
-  providerType: LoginMethodsEnum;
-  callbackRoute: string;
-  className?: string;
-  verifyReceiverScam?: boolean;
-}
-
-interface CustomConfirmScreensType {
-  Ledger: (signProps: SignPropsType) => JSX.Element;
-  Extension: (signProps: SignPropsType) => JSX.Element;
-  WalletConnect: (signProps: SignPropsType) => JSX.Element;
-  Extra: (signProps: SignPropsType) => JSX.Element;
-}
+import { ConfirmationScreen } from './components/ConfirmationScreen';
+import { SignWithExtensionModal } from './SignWithExtensionModal';
+import { SignWithLedgerModal } from './SignWithLedgerModal';
+import { SignWithWalletConnectModal } from './SignWithWalletConnectModal';
+import {
+  CustomConfirmScreensType,
+  ScreenType,
+  SignPropsType
+} from './types/signTransactionsModals.types';
 
 interface SignTransactionsPropsType {
   className?: string;
@@ -37,75 +17,51 @@ interface SignTransactionsPropsType {
   verifyReceiverScam?: SignPropsType['verifyReceiverScam'];
 }
 
-function SignTransactionsModals({
+export const SignTransactionsModals = ({
   className,
   CustomConfirmScreens,
   verifyReceiverScam = true
-}: SignTransactionsPropsType) {
-  const {
-    callbackRoute,
-    transactions,
-    error,
-    sessionId,
-    onAbort,
-    hasTransactions
-  } = useSignTransactions();
-
-  const { providerType } = useGetAccountProvider();
-  const signTransactionsError = useGetSignTransactionsError();
+}: SignTransactionsPropsType) => {
   const { loginMethod } = useGetLoginInfo();
 
-  const handleClose = () => {
-    onAbort(sessionId);
+  const ConfirmScreens: CustomConfirmScreensType = {
+    Ledger: CustomConfirmScreens?.Ledger ?? SignWithLedgerModal,
+    WalletConnect:
+      CustomConfirmScreens?.WalletConnect ?? SignWithWalletConnectModal,
+    Extension: CustomConfirmScreens?.Extension ?? SignWithExtensionModal,
+    // The purpose of having this is to have a consistent flow of transaction signing.
+    // The logic for redirecting to the web wallet is placed in the ConfirmationScreen component,
+    // so we have to render that component when we are logged in with the web wallet provider
+    Wallet: () => <></>,
+    Extra: CustomConfirmScreens?.Extra
   };
 
-  const signError = error || signTransactionsError;
+  const renderScreen = useCallback(
+    (Screen?: ScreenType) => {
+      return (
+        <ConfirmationScreen
+          Screen={Screen}
+          verifyReceiverScam={verifyReceiverScam}
+          className={className}
+        />
+      );
+    },
+    [verifyReceiverScam, className]
+  );
 
-  const signProps: SignPropsType = {
-    handleClose,
-    error: signError,
-    sessionId,
-    transactions: transactions!,
-    providerType,
-    callbackRoute,
-    className,
-    verifyReceiverScam
-  };
-
-  if (signError || hasTransactions) {
-    switch (loginMethod) {
-      case LoginMethodsEnum.ledger:
-        return CustomConfirmScreens?.Ledger ? (
-          <CustomConfirmScreens.Ledger {...signProps} />
-        ) : (
-          <SignWithLedgerModal {...signProps} />
-        );
-
-      case LoginMethodsEnum.walletconnect:
-        return CustomConfirmScreens?.WalletConnect ? (
-          <CustomConfirmScreens.WalletConnect {...signProps} />
-        ) : (
-          <SignWithWalletConnectModal {...signProps} />
-        );
-
-      case LoginMethodsEnum.extension:
-        return CustomConfirmScreens?.Extension ? (
-          <CustomConfirmScreens.Extension {...signProps} />
-        ) : (
-          <SignWithExtensionModal {...signProps} />
-        );
-
-      case LoginMethodsEnum.extra:
-        return CustomConfirmScreens?.Extra ? (
-          <CustomConfirmScreens.Extra {...signProps} />
-        ) : null;
-
-      default:
-        return null;
-    }
+  switch (loginMethod) {
+    case LoginMethodsEnum.ledger:
+      return renderScreen(ConfirmScreens.Ledger);
+    case LoginMethodsEnum.walletconnect:
+    case LoginMethodsEnum.walletconnectv2:
+      return renderScreen(ConfirmScreens.WalletConnect);
+    case LoginMethodsEnum.extension:
+      return renderScreen(ConfirmScreens.Extension);
+    case LoginMethodsEnum.wallet:
+      return renderScreen(ConfirmScreens.Wallet);
+    case LoginMethodsEnum.extra:
+      return renderScreen(ConfirmScreens.Extra);
+    default:
+      return null;
   }
-
-  return null;
-}
-
-export default withClassNameWrapper(SignTransactionsModals);
+};

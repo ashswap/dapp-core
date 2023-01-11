@@ -1,23 +1,35 @@
 import React from 'react';
-import classNames from 'optionalPackages/classnames';
-import freeSolidIcons from 'optionalPackages/fortawesome-free-solid-svg-icons';
-import ReactBootstrap from 'optionalPackages/react-bootstrap';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import classNames from 'classnames';
+import globalStyles from 'assets/sass/main.scss';
+import { useClearTransactionsToSignWithWarning } from 'hooks/transactions/helpers/useClearTransactionsToSignWithWarning';
 import { SignModalPropsType } from 'types';
-import PageState from 'UI/PageState';
-import { getGeneratedClasses, wrapperClassName } from 'utils';
+import { ModalContainer } from 'UI/ModalContainer/ModalContainer';
+import { PageState } from 'UI/PageState';
+import styles from './signWithExtensionModalStyles.scss';
 
-const SignWithExtensionModal = ({
+export const SignWithExtensionModal = ({
   handleClose,
   error,
-  callbackRoute,
   transactions,
-  className = 'extension-modal'
+  sessionId,
+  className = 'dapp-extension-modal',
+  modalContentClassName
 }: SignModalPropsType) => {
-  const classes = getGeneratedClasses(className, true, {
-    wrapper: 'modal-container extension',
-    icon: 'text-white',
-    closeBtn: 'btn btn-close-link mt-2'
-  });
+  const clearTransactionsToSignWithWarning = useClearTransactionsToSignWithWarning();
+
+  const classes = {
+    wrapper: classNames(styles.modalContainer, styles.extension, className),
+    icon: globalStyles.textWhite,
+    closeBtn: classNames(
+      globalStyles.btn,
+      globalStyles.btnCloseLink,
+      globalStyles.btnDark,
+      globalStyles.textWhite,
+      globalStyles.mt2
+    )
+  };
+
   const description = error
     ? error
     : transactions && transactions.length > 1
@@ -27,28 +39,24 @@ const SignWithExtensionModal = ({
   const close = (e: React.MouseEvent) => {
     e.preventDefault();
     handleClose();
-    if (
-      callbackRoute != null &&
-      !window.location.pathname.includes(callbackRoute)
-    ) {
-      window.location.href = callbackRoute;
-    }
+    clearTransactionsToSignWithWarning(sessionId);
   };
 
   return (
-    <ReactBootstrap.Modal
-      show
-      backdrop='static'
-      onHide={handleClose}
-      className={classNames(classes.wrapper, wrapperClassName)}
-      animation={false}
-      centered
+    <ModalContainer
+      onClose={handleClose}
+      modalConfig={{
+        modalDialogClassName: classes.wrapper
+      }}
+      modalInteractionConfig={{
+        openOnMount: true
+      }}
     >
       <PageState
-        icon={error ? freeSolidIcons.faTimes : freeSolidIcons.faHourglass}
+        icon={error ? faTimes : null}
         iconClass={classes.icon}
-        className={className}
-        iconBgClass={error ? 'bg-danger' : 'bg-warning'}
+        className={modalContentClassName}
+        iconBgClass={error ? globalStyles.bgDanger : globalStyles.bgWarning}
         iconSize='3x'
         title='Confirm on Maiar DeFi Wallet'
         description={description}
@@ -63,8 +71,6 @@ const SignWithExtensionModal = ({
           </button>
         }
       />
-    </ReactBootstrap.Modal>
+    </ModalContainer>
   );
 };
-
-export default SignWithExtensionModal;

@@ -1,36 +1,34 @@
 import React from 'react';
-import classnames from 'optionalPackages/classnames';
-import ReactFontawesome from 'optionalPackages/react-fontawesome';
-import { getGeneratedClasses } from 'utils';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-import { Props } from './types';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import classNames from 'classnames';
+import globalStyles from 'assets/sass/main.scss';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { WithClassnameType } from '../types';
 
-const IconState = ({
+export interface IconStateProps extends WithClassnameType {
+  icon: IconProp;
+  iconSize?: '2x' | '3x' | '5x';
+}
+
+export const IconState = ({
   icon,
   iconSize = '3x',
-  className = 'icon-state',
-  shouldRenderDefaultCss = true
-}: Props) => {
-  const generatedClasses = getGeneratedClasses(
-    className,
-    shouldRenderDefaultCss,
-    {
-      wrapper: classnames('icon-state mx-auto', className, {
+  className = 'dapp-icon-state'
+}: IconStateProps) => {
+  const classes = {
+    wrapper: classNames(
+      `${globalStyles.iconState} ${globalStyles.mxAuto}`,
+      {
         half: iconSize === '2x'
-      }),
-      icon: classnames('text-white', className)
-    }
-  );
+      },
+      className
+    ),
+    icon: globalStyles.textWhite
+  };
 
   return (
-    <span className={generatedClasses.wrapper}>
-      <ReactFontawesome.FontAwesomeIcon
-        icon={icon}
-        size={iconSize}
-        className={generatedClasses.icon}
-      />
+    <span className={classes.wrapper}>
+      <FontAwesomeIcon icon={icon} size={iconSize} className={classes.icon} />
     </span>
   );
 };
-
-export default withClassNameWrapper(IconState);

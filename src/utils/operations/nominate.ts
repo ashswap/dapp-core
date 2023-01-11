@@ -1,18 +1,18 @@
-import {
-  createBalanceBuilder,
-  Token,
-  TokenType
-} from '@elrondnetwork/erdjs/out';
-import { denomination as configDenomination } from 'constants/index';
+import { DECIMALS } from 'constants/index';
+import { parseAmount } from './parseAmount';
 
-export function nominate(input: string, customDenomination?: number) {
-  const balance = createBalanceBuilder(
-    new Token({
-      decimals: customDenomination || configDenomination,
-      type: TokenType.Fungible
-    })
-  );
-  return balance(input).toString();
+let deprecationMessageDisplayed = false;
+
+/**
+ * !!! This function is deprecated. Please use parseAmount instead.
+ * */
+export function nominate(amount: string, numDecimals: number = DECIMALS) {
+  if (!deprecationMessageDisplayed) {
+    console.warn(
+      '!!! Be aware !!! The "nominate" function is deprecated. Please use "parseAmount" instead.'
+    );
+    deprecationMessageDisplayed = true;
+  }
+
+  return parseAmount(amount, numDecimals);
 }
-
-export default nominate;

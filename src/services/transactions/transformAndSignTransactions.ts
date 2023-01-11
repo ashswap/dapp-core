@@ -1,13 +1,9 @@
 import { Address, Transaction } from '@elrondnetwork/erdjs';
 import BigNumber from 'bignumber.js';
-import {
-  gasPrice as configGasPrice,
-  gasLimit as configGasLimit,
-  gasPerDataByte
-} from 'constants/index';
-import newTransaction from 'models/newTransaction';
-import { addressSelector, chainIDSelector } from 'redux/selectors';
-import { store } from 'redux/store';
+import { GAS_LIMIT, GAS_PER_DATA_BYTE, GAS_PRICE } from 'constants/index';
+import { newTransaction } from 'models/newTransaction';
+import { addressSelector, chainIDSelector } from 'reduxStore/selectors';
+import { store } from 'reduxStore/store';
 import { SendSimpleTransactionPropsType } from 'types';
 import { getAccount, getLatestNonce } from 'utils';
 
@@ -18,8 +14,8 @@ enum ErrorCodesEnum {
 
 // TODO: replace with new erdjs function
 function calculateGasLimit(data?: string) {
-  const bNconfigGasLimit = new BigNumber(configGasLimit);
-  const bNgasPerDataByte = new BigNumber(gasPerDataByte);
+  const bNconfigGasLimit = new BigNumber(GAS_LIMIT);
+  const bNgasPerDataByte = new BigNumber(GAS_PER_DATA_BYTE);
   const bNgasValue = data
     ? bNgasPerDataByte.times(Buffer.from(data).length)
     : 0;
@@ -40,9 +36,9 @@ export async function transformAndSignTransactions({
       receiver,
       data = '',
       chainID,
-      version,
+      version = 1,
       options,
-      gasPrice = configGasPrice,
+      gasPrice = GAS_PRICE,
       gasLimit = calculateGasLimit(tx.data)
     } = tx;
     let validatedReceiver = receiver;
@@ -67,10 +63,8 @@ export async function transformAndSignTransactions({
       nonce: Number(nonce.valueOf().toString()),
       sender: new Address(address).hex(),
       chainID: transactionsChainId,
-      version,
+      version: version,
       options
     });
   });
 }
-
-export default transformAndSignTransactions;

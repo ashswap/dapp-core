@@ -1,26 +1,29 @@
+import { SignableMessage, Transaction } from '@elrondnetwork/erdjs';
+import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider';
+import { HWProvider } from '@elrondnetwork/erdjs-hw-provider';
+import { IHWElrondApp } from '@elrondnetwork/erdjs-hw-provider/out/interface';
 import {
-  ExtensionProvider,
-  HWProvider,
-  IDappProvider,
-  IHWElrondApp,
-  SignableMessage,
-  Transaction,
+  EngineTypes,
   WalletConnectProvider,
-  WalletProvider
-} from '@elrondnetwork/erdjs';
-import { ledgerContractDataEnabledValue } from 'constants/index';
-import { LoginMethodsEnum } from 'types/enums';
+  WalletConnectProviderV2
+} from '@elrondnetwork/erdjs-wallet-connect-provider';
+import { WalletProvider } from '@elrondnetwork/erdjs-web-wallet-provider';
+import { LEDGER_CONTRACT_DATA_ENABLED_VALUE } from 'constants/index';
+import { IDappProvider } from 'types';
+import { LoginMethodsEnum } from 'types/enums.types';
 
 export const DAPP_INIT_ROUTE = '/dapp/init';
 
-export const getProviderType = (
-  provider?: IDappProvider | null
+export const getProviderType = <TProvider extends Object>(
+  provider?: TProvider | null
 ): LoginMethodsEnum => {
   switch (provider?.constructor) {
     case WalletProvider:
       return LoginMethodsEnum.wallet;
     case WalletConnectProvider:
       return LoginMethodsEnum.walletconnect;
+    case WalletConnectProviderV2:
+      return LoginMethodsEnum.walletconnectv2;
     case HWProvider:
       return LoginMethodsEnum.ledger;
     case ExtensionProvider:
@@ -43,7 +46,7 @@ export const getLedgerConfiguration = async (
   }
   const hwApp: IHWElrondApp = (initializedHwWalletP as any).hwApp;
   const { contractData, version } = await hwApp.getAppConfiguration();
-  const dataEnabled = contractData === ledgerContractDataEnabledValue;
+  const dataEnabled = contractData === LEDGER_CONTRACT_DATA_ENABLED_VALUE;
   return { version, dataEnabled };
 };
 
@@ -52,56 +55,98 @@ const notInitializedError = (caller: string) => {
 };
 
 export class EmptyProvider implements IDappProvider {
-  async init() {
-    return false;
+  init(): Promise<boolean> {
+    return Promise.resolve(false);
   }
-  login(options?: { callbackUrl?: string; token?: string }): Promise<string> {
+
+  login<TOptions = { callbackUrl?: string } | undefined, TResponse = string>(
+    options?: TOptions
+  ): Promise<TResponse> {
     throw new Error(notInitializedError(`login with options: ${options}`));
   }
-  async logout(options?: { callbackUrl?: string }): Promise<boolean> {
+
+  logout<TOptions = { callbackUrl?: string }, TResponse = boolean>(
+    options?: TOptions
+  ): Promise<TResponse> {
     throw new Error(notInitializedError(`logout with options: ${options}`));
   }
-  async getAddress(): Promise<string> {
+
+  getAddress(): Promise<string> {
     throw new Error(notInitializedError('getAddress'));
   }
+
   isInitialized(): boolean {
     return false;
   }
-  async isConnected(): Promise<boolean> {
-    return false;
+
+  isConnected(): Promise<boolean> {
+    return Promise.resolve(false);
   }
-  async sendTransaction(
-    transaction: Transaction,
-    options?: { callbackUrl?: string }
-  ): Promise<Transaction> {
+
+  sendTransaction?<
+    TOptions = { callbackUrl?: string },
+    TResponse = Transaction
+  >(transaction: Transaction, options?: TOptions): Promise<TResponse> {
     throw new Error(
       notInitializedError(
         `sendTransaction with transactions: ${transaction} options: ${options}`
       )
     );
   }
-  async signTransaction(
+
+  signTransaction<TOptions = { callbackUrl?: string }, TResponse = Transaction>(
     transaction: Transaction,
-    options?: { callbackUrl?: string }
-  ): Promise<Transaction> {
+    options?: TOptions
+  ): Promise<TResponse> {
     throw new Error(
       notInitializedError(
         `signTransaction with transactions: ${transaction} options: ${options}`
       )
     );
   }
-  async signTransactions(
-    transactions: Transaction[],
-    options?: { callbackUrl?: string }
-  ): Promise<Transaction[]> {
+
+  signTransactions<TOptions = { callbackUrl?: string }, TResponse = []>(
+    transactions: [],
+    options?: TOptions
+  ): Promise<TResponse> {
     throw new Error(
       notInitializedError(
         `signTransactions with transactions: ${transactions} options: ${options}`
       )
     );
   }
-  async signMessage(message: SignableMessage): Promise<SignableMessage> {
-    throw new Error(notInitializedError(`signTransactions with ${message}`));
+
+  signMessage<T extends SignableMessage, TOptions = { callbackUrl?: string }>(
+    message: T,
+    options: TOptions
+  ): Promise<T> {
+    throw new Error(
+      notInitializedError(
+        `signTransactions with ${message} and options ${options}`
+      )
+    );
+  }
+
+  sendCustomMessage?({
+    method,
+    params
+  }: {
+    method: string;
+    params: any;
+  }): Promise<any> {
+    throw new Error(
+      notInitializedError(
+        `sendCustomMessage with method: ${method} params: ${params}`
+      )
+    );
+  }
+
+  sendCustomRequest?(options?: {
+    request: EngineTypes.RequestParams['request'];
+  }): Promise<any> {
+    throw new Error(
+      notInitializedError(`sendSessionEvent with options: ${options}`)
+    );
   }
 }
 

@@ -1,9 +1,22 @@
 import React from 'react';
+import { IconProp, SizeProp } from '@fortawesome/fontawesome-svg-core';
+import { IconDefinition } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
-import ReactFontawesome from 'optionalPackages/react-fontawesome';
-import { getGeneratedClasses } from 'utils';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-import { PageStateProps } from './types';
+import globalStyles from 'assets/sass/main.scss';
+import { WithClassnameType } from '../types';
+import styles from './pageStateStyles.scss';
+
+export interface PageStateProps extends WithClassnameType {
+  title?: React.ReactNode;
+  icon?: IconProp | IconDefinition | null;
+  iconClass?: string;
+  dataTestId?: string;
+  iconSize?: SizeProp;
+  iconBgClass?: string;
+  action?: React.ReactNode;
+  description?: string | React.ReactNode;
+}
 
 export const PageState = ({
   icon,
@@ -14,41 +27,41 @@ export const PageState = ({
   description,
   iconBgClass,
   iconSize = '5x',
-  className = 'page-state',
-  shouldRenderDefaultCss = true
+  className = 'dapp-page-state'
 }: PageStateProps) => {
-  const generatedClasses = getGeneratedClasses(
-    className,
-    shouldRenderDefaultCss,
-    {
-      wrapper: 'state m-auto p-4 text-center',
-      iconContainer: classNames('icon-state mx-auto', {
-        [`${iconBgClass}`]: Boolean(iconBgClass)
-      }),
-      iconClass: classNames(iconClass != null && iconClass),
-      title: 'h4 my-4',
-      description: 'mb-3'
-    }
-  );
+  const classes = {
+    wrapper: classNames(
+      styles.state,
+      globalStyles.mAuto,
+      globalStyles.p4,
+      globalStyles.textCenter,
+      className
+    ),
+    iconContainer: classNames(
+      `${globalStyles.iconState} ${globalStyles.mxAuto}`,
+      {
+        [iconBgClass ?? '']: Boolean(iconBgClass)
+      }
+    ),
+    iconClass: classNames(iconClass != null && iconClass),
+    title: classNames(globalStyles.h4, globalStyles.my4),
+    description: globalStyles.mb3
+  };
 
   return (
-    <div className={generatedClasses.wrapper} data-testid={dataTestId}>
+    <div className={classes.wrapper} data-testid={dataTestId}>
       {icon && (
-        <span className={generatedClasses.iconContainer}>
-          <ReactFontawesome.FontAwesomeIcon
+        <span className={classes.iconContainer}>
+          <FontAwesomeIcon
             icon={icon}
-            className={generatedClasses.iconClass}
+            className={classes.iconClass}
             size={iconSize}
           />
         </span>
       )}
-      {title && <p className={generatedClasses.title}>{title}</p>}
-      {description && (
-        <div className={generatedClasses.description}>{description}</div>
-      )}
-      {action && <React.Fragment>{action}</React.Fragment>}
+      {title && <p className={classes.title}>{title}</p>}
+      {description && <div className={classes.description}>{description}</div>}
+      {action && <>{action}</>}
     </div>
   );
 };
-
-export default withClassNameWrapper(PageState);

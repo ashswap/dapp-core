@@ -1,7 +1,5 @@
-import { getAccountFromProxyProvider } from 'providers/proxyProvider';
+import { getAccountFromApi } from 'apiCalls/accounts/getAccountFromApi';
 
-export function getAccount(address?: string) {
-  return getAccountFromProxyProvider(address);
+export async function getAccount(address?: string) {
+  return await getAccountFromApi(address);
 }
-
-export default getAccount;

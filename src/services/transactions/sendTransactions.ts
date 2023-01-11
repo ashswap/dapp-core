@@ -1,12 +1,11 @@
 import { Transaction } from '@elrondnetwork/erdjs/out';
-import { SendTransactionsPropsType, SimpleTransactionType } from 'types';
+import {
+  SendTransactionReturnType,
+  SendTransactionsPropsType,
+  SimpleTransactionType
+} from 'types';
 import { signTransactions } from './signTransactions';
-import transformAndSignTransactions from './transformAndSignTransactions';
-
-export interface SendTransactionReturnType {
-  error?: string;
-  sessionId: string | null;
-}
+import { transformAndSignTransactions } from './transformAndSignTransactions';
 
 export async function sendTransactions({
   transactions,
@@ -51,5 +50,3 @@ export async function sendTransactions({
     return { error: err as any, sessionId: null };
   }
 }
-
-export default sendTransactions;

@@ -1,13 +1,25 @@
 import axios from 'axios';
-import useGetNetworkConfig from 'hooks/useGetNetworkConfig';
-
-import useSwr from 'optionalPackages/swr';
+import useSwr from 'swr';
+import { COLLECTIONS_ENDPOINT, TOKENS_ENDPOINT } from 'apiCalls';
+import { useGetNetworkConfig } from 'hooks/useGetNetworkConfig';
 import { getIdentifierType } from 'utils';
+
+export type TokenAssets = {
+  description: string;
+  status: string;
+  svgUrl: string;
+  website?: string;
+  pngUrl?: string;
+  social?: any;
+  extraTokens?: string[];
+  lockedAccounts?: { [key: string]: string };
+};
 
 interface TokenOptionType {
   tokenLabel: string;
-  tokenDenomination: number;
+  tokenDecimals: number;
   tokenAvatar: string;
+  assets?: TokenAssets;
   error?: string;
 }
 
@@ -16,11 +28,7 @@ interface TokenInfoResponse {
   name: string;
   ticker: string;
   decimals: number;
-  assets: {
-    description: string;
-    status: string;
-    svgUrl: string;
-  };
+  assets: TokenAssets;
 }
 
 const fetcher = (url: string) =>
@@ -33,34 +41,46 @@ export function useGetTokenDetails({
 }): TokenOptionType {
   const { network } = useGetNetworkConfig();
 
-  const { isEsdt } = getIdentifierType(tokenId);
-  const tokenEndpoint = isEsdt ? 'tokens' : 'nfts';
+  const { isEsdt, isNft } = getIdentifierType(tokenId);
+  const tokenEndpoint = isEsdt ? TOKENS_ENDPOINT : COLLECTIONS_ENDPOINT;
+  let tokenIdentifier = tokenId;
+
+  if (isNft) {
+    const [firstPart, secondPart] = tokenId.split('-');
+    tokenIdentifier = `${firstPart}-${secondPart}`;
+  }
 
   const {
     data: selectedToken,
     error
   }: { data?: TokenInfoResponse; error?: string } = useSwr(
-    Boolean(tokenId)
-      ? `${network.apiAddress}/${tokenEndpoint}/${tokenId}`
+    Boolean(tokenIdentifier)
+      ? `${network.apiAddress}/${tokenEndpoint}/${tokenIdentifier}`
       : null,
     fetcher
   );
 
-  if (!tokenId) {
+  if (!tokenIdentifier) {
     return {
-      tokenDenomination: Number(network.egldDenomination),
+      tokenDecimals: Number(network.decimals),
       tokenLabel: '',
       tokenAvatar: ''
     };
   }
 
-  const tokenDenomination = selectedToken
+  const tokenDecimals = selectedToken
     ? selectedToken?.decimals
-    : Number(network.egldDenomination);
+    : Number(network.decimals);
   const tokenLabel = selectedToken ? selectedToken?.name : '';
   const tokenAvatar = selectedToken ? `${selectedToken?.assets?.svgUrl}` : '';
 
-  return { tokenDenomination, tokenLabel, tokenAvatar, error };
-}
+  const assets = selectedToken?.assets;
 
-export default useGetTokenDetails;
+  return {
+    tokenDecimals: tokenDecimals,
+    tokenLabel,
+    tokenAvatar,
+    assets,
+    error
+  };
+}

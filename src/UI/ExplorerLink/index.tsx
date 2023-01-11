@@ -1,40 +1,38 @@
-import React from 'react';
+import React, { PropsWithChildren, useMemo } from 'react';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import classNames from 'classnames';
 import { useGetNetworkConfig } from 'hooks';
+import { WithClassnameType } from '../types';
+import styles from './explorerLinkStyles.scss';
 
-import icons from 'optionalPackages/fortawesome-free-solid-svg-icons';
-import ReactFontawesome from 'optionalPackages/react-fontawesome';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-
-const ExplorerLink = ({
+export const ExplorerLink = ({
   page,
   text,
-  className
+  className = 'dapp-explorer-link',
+  children
 }: {
   page: string;
   text?: any;
-  className?: string;
-}) => {
+} & PropsWithChildren &
+  WithClassnameType) => {
   const {
     network: { explorerAddress }
   } = useGetNetworkConfig();
+
+  const defaultContent = useMemo(
+    () => text ?? <FontAwesomeIcon icon={faSearch} className={styles.search} />,
+    [text]
+  );
+
   return (
     <a
       href={`${explorerAddress}${page}`}
-      {...{
-        target: '_blank'
-      }}
-      className={`link-style ${className}`}
+      target='_blank'
+      className={classNames(styles.link, className)}
+      rel='noreferrer'
     >
-      {text ? (
-        <React.Fragment>{text}</React.Fragment>
-      ) : (
-        <ReactFontawesome.FontAwesomeIcon
-          icon={icons.faSearch}
-          className='text-secondary'
-        />
-      )}
+      {children ?? defaultContent}
     </a>
   );
 };
-
-export default withClassNameWrapper(ExplorerLink);

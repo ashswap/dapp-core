@@ -1,22 +1,26 @@
 import BigNumber from 'bignumber.js';
-import { networkConstants } from 'constants/index';
+import { GAS_LIMIT } from 'constants/index';
 
-import { accountBalanceSelector, chainIDSelector } from 'redux/selectors';
+import { accountBalanceSelector } from 'reduxStore/selectors/accountInfoSelectors';
+import { chainIDSelector } from 'reduxStore/selectors/networkConfigSelectors';
 import {
   setTransactionsToSign,
   setNotificationModal,
   setTransactionsDisplayInfo
-} from 'redux/slices';
-import { store } from 'redux/store';
-import { NotificationTypesEnum, SignTransactionsPropsType } from 'types';
-import { SendTransactionReturnType } from './sendTransactions';
+} from 'reduxStore/slices';
+import { store } from 'reduxStore/store';
+import {
+  NotificationTypesEnum,
+  SendTransactionReturnType,
+  SignTransactionsPropsType
+} from 'types';
+import { stringIsFloat } from 'utils/validation/stringIsFloat';
 import { calcTotalFee } from './utils';
-import { stringIsFloat } from 'utils';
 
 export function signTransactions({
   transactions,
   callbackRoute,
-  minGasLimit = networkConstants.DEFAULT_MIN_GAS_LIMIT,
+  minGasLimit = GAS_LIMIT,
   customTransactionInformation,
   transactionsDisplayInfo
 }: SignTransactionsPropsType): SendTransactionReturnType {
@@ -66,12 +70,9 @@ export function signTransactions({
     customTransactionInformation,
     transactions: transactionsPayload.map((tx) => tx.toPlainObject())
   };
-
   store.dispatch(setTransactionsToSign(signTransactionsPayload));
   store.dispatch(
     setTransactionsDisplayInfo({ sessionId, transactionsDisplayInfo })
   );
   return { sessionId };
 }
-
-export default signTransactions;

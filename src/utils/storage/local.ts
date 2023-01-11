@@ -1,7 +1,8 @@
-import moment from 'moment';
+import { getUnixTimestamp } from 'utils/dateTime';
 
 export const localStorageKeys = {
-  loginExpiresAt: 'dapp-core-login-expires-at'
+  loginExpiresAt: 'dapp-core-login-expires-at',
+  logoutEvent: 'dapp-core-logout-event'
 } as const;
 
 type LocalValueType = keyof typeof localStorageKeys;
@@ -53,7 +54,7 @@ export const getItem = (key: LocalKeyType): any => {
     return null;
   }
 
-  const expired = moment().unix() >= deserializedItem.expires;
+  const expired = getUnixTimestamp() >= deserializedItem.expires;
   if (expired) {
     localStorage.removeItem(String(key));
     return null;

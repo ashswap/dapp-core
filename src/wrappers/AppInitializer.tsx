@@ -2,17 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Address } from '@elrondnetwork/erdjs/out';
 import { getServerConfiguration } from 'apiCalls';
 import { fallbackNetworkConfigurations } from 'constants/network';
-import { useGetAccountInfo } from 'hooks';
-import { initializeProxyProvider } from 'providers/proxyProvider';
-import { useDispatch } from 'redux/DappProviderContext';
-import { initializeNetworkConfig } from 'redux/slices/networkConfigSlice';
-import { CustomNetworkType, EnvironmentsEnum, NetworkType } from 'types';
-import { logout } from 'utils';
-import getAccountShard from 'utils/account/getAccountShard';
+import { useGetAccountInfo } from 'hooks/account/useGetAccountInfo';
+import { useDispatch, useSelector } from 'reduxStore/DappProviderContext';
+import { isLoginSessionInvalidSelector } from 'reduxStore/selectors/loginInfoSelectors';
+import { initializeNetworkConfig } from 'reduxStore/slices/networkConfigSlice';
+import { CustomNetworkType, EnvironmentsEnum, IDappProvider } from 'types';
+import { getAccountShard } from 'utils/account/getAccountShard';
+import { logout } from 'utils/logout';
 
 interface AppInitializerPropsType {
   customNetworkConfig?: CustomNetworkType;
   children: any;
+  externalProvider?: IDappProvider;
   environment: EnvironmentsEnum;
 }
 
@@ -23,12 +24,10 @@ export function AppInitializer({
 }: AppInitializerPropsType) {
   const [initialized, setInitialized] = useState(false);
   const account = useGetAccountInfo();
+  const isLoginSessionInvalid = useSelector(isLoginSessionInvalidSelector);
+
   const { address, publicKey } = account;
   const dispatch = useDispatch();
-
-  function initializeProviders(networkConfig: NetworkType) {
-    initializeProxyProvider(networkConfig);
-  }
 
   async function initializeNetwork() {
     const fetchConfigFromServer = !customNetworkConfig?.skipFetchFromServer;
@@ -54,17 +53,16 @@ export function AppInitializer({
           ...customNetworkConfig
         };
         dispatch(initializeNetworkConfig(apiConfig));
-        initializeProviders(apiConfig);
         return;
       }
     }
 
     dispatch(initializeNetworkConfig(localConfig));
-    initializeProviders(localConfig);
   }
 
   async function initializeApp() {
     await initializeNetwork();
+
     setInitialized(true);
 
     getAccountShard();
@@ -91,7 +89,11 @@ export function AppInitializer({
     initializeApp();
   }, [customNetworkConfig, environment]);
 
+  useEffect(() => {
+    if (isLoginSessionInvalid) {
+      logout();
+    }
+  }, [isLoginSessionInvalid]);
+
   return initialized ? <>{children}</> : null;
 }
-
-export default AppInitializer;

@@ -1,24 +1,36 @@
 import React from 'react';
-
-import classNames from 'optionalPackages/classnames';
-import icons from 'optionalPackages/fortawesome-free-solid-svg-icons';
-import ReactBootstrap from 'optionalPackages/react-bootstrap';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import classNames from 'classnames';
+import globalStyles from 'assets/sass/main.scss';
+import { CANCEL_ACTION_NAME } from 'constants/index';
+import { useClearTransactionsToSignWithWarning } from 'hooks/transactions/helpers/useClearTransactionsToSignWithWarning';
+import { useCancelWalletConnectAction } from 'hooks/transactions/useCancelWalletConnectAction';
 import { SignModalPropsType } from 'types';
-import PageState from 'UI/PageState';
-import { getGeneratedClasses, wrapperClassName } from 'utils';
+import { ModalContainer } from 'UI/ModalContainer/ModalContainer';
+import { PageState } from 'UI/PageState';
+import styles from './signWithWalletConnectModalStyles.scss';
 
 export const SignWithWalletConnectModal = ({
   error,
   handleClose,
-  callbackRoute,
   transactions,
-  className = 'wallet-connect-modal'
+  sessionId,
+  className = 'dapp-wallet-connect-modal',
+  modalContentClassName
 }: SignModalPropsType) => {
-  const classes = getGeneratedClasses(className, true, {
-    wrapper: 'modal-container wallet-connect',
-    icon: 'text-white',
-    closeBtn: 'btn btn-close-link mt-2'
-  });
+  const clearTransactionsToSignWithWarning = useClearTransactionsToSignWithWarning();
+
+  const classes = {
+    wrapper: classNames(styles.modalContainer, styles.walletConnect, className),
+    icon: globalStyles.textWhite,
+    closeBtn: classNames(
+      globalStyles.btn,
+      globalStyles.btnCloseLink,
+      globalStyles.btnDark,
+      globalStyles.textWhite,
+      globalStyles.mt2
+    )
+  };
 
   const hasMultipleTransactions = transactions && transactions?.length > 1;
   const description = error
@@ -27,30 +39,32 @@ export const SignWithWalletConnectModal = ({
         hasMultipleTransactions ? 's' : ''
       }`;
 
-  const close = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const { cancelWalletConnectAction } = useCancelWalletConnectAction(
+    CANCEL_ACTION_NAME
+  );
+
+  const close = async () => {
     handleClose();
-    if (
-      callbackRoute != null &&
-      !window.location.pathname.includes(callbackRoute)
-    ) {
-      window.location.href = callbackRoute;
-    }
+    clearTransactionsToSignWithWarning(sessionId);
+
+    await cancelWalletConnectAction();
   };
+
   return (
-    <ReactBootstrap.Modal
-      show
-      backdrop='static'
-      onHide={close}
-      className={classNames(classes.wrapper, wrapperClassName)}
-      animation={false}
-      centered
+    <ModalContainer
+      onClose={close}
+      modalConfig={{
+        modalDialogClassName: classes.wrapper
+      }}
+      modalInteractionConfig={{
+        openOnMount: true
+      }}
     >
       <PageState
-        icon={error ? icons.faTimes : icons.faHourglass}
+        icon={error ? faTimes : null}
         iconClass={classes.icon}
-        className={className}
-        iconBgClass={error ? 'bg-danger' : 'bg-warning'}
+        className={modalContentClassName}
+        iconBgClass={error ? globalStyles.bgDanger : globalStyles.bgWarning}
         iconSize='3x'
         title='Confirm on Maiar'
         description={description}
@@ -65,8 +79,6 @@ export const SignWithWalletConnectModal = ({
           </button>
         }
       />
-    </ReactBootstrap.Modal>
+    </ModalContainer>
   );
 };
-
-export default SignWithWalletConnectModal;

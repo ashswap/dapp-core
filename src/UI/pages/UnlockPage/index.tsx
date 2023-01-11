@@ -1,37 +1,49 @@
 import React from 'react';
+import classNames from 'classnames';
+import globalStyles from 'assets/sass/main.scss';
 import { useGetLoginInfo } from 'hooks';
-import ExtensionLoginButton from 'UI/extension/LoginButton';
+import { ExtensionLoginButton } from 'UI/extension/ExtensionLoginButton';
+import { LedgerLoginButton } from 'UI/ledger/LedgerLoginButton';
+import { WalletConnectLoginButton } from 'UI/walletConnect/WalletConnectLoginButton';
+import { WebWalletLoginButton } from 'UI/webWallet/WebWalletLoginButton';
+import styles from './unlockPageStyles.scss';
 
-import LedgerLoginButton from 'UI/ledger/LoginButton';
-import WalletConnectLoginButton from 'UI/walletConnect/WalletConnectLoginButton';
-import WebWalletLoginButton from 'UI/webWallet/LoginButton';
-import { getGeneratedClasses, wrapperClassName } from 'utils';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
-import { Props } from './types';
+export interface Props {
+  title?: string;
+  className?: string;
+  loginRoute: string;
+  LedgerLoginButtonText?: string;
+  ExtensionLoginButtonText?: string;
+  WebWalletLoginButtonText?: string;
+  WalletConnectLoginButtonText?: string;
+  WalletConnectV2LoginButtonText?: string;
+  description?: string | React.ReactNode;
+}
 
-const UnlockPage = ({
+export const UnlockPage = ({
   loginRoute,
   title = 'Login',
-  className = 'unlock-page',
-  shouldRenderDefaultCss = true,
+  className = 'dapp-unlock-page',
   LedgerLoginButtonText = 'Ledger',
   description = 'Pick a login method',
   WalletConnectLoginButtonText = 'Maiar',
   ExtensionLoginButtonText = 'Extension',
   WebWalletLoginButtonText = 'Web wallet'
 }: Props) => {
-  const generatedClasses = getGeneratedClasses(
-    className,
-    shouldRenderDefaultCss,
-    {
-      wrapper: `home d-flex flex-fill align-items-center ${wrapperClassName}`,
-      title: 'mb-4',
-      description: 'mb-4',
-      cardContainer: 'm-auto',
-      card: 'card my-4 text-center',
-      cardBody: 'card-body py-4 px-2 px-sm-2 mx-lg-4'
-    }
-  );
+  const generatedClasses = {
+    wrapper: classNames(
+      styles.home,
+      globalStyles.dFlex,
+      globalStyles.flexFill,
+      globalStyles.alignItemsCenter,
+      className
+    ),
+    title: globalStyles.mb4,
+    description: globalStyles.mb4,
+    cardContainer: globalStyles.mAuto,
+    card: `${globalStyles.card} ${globalStyles.my4} ${globalStyles.textCenter}`,
+    cardBody: `${globalStyles.cardBody} ${globalStyles.py4} ${globalStyles.px2} ${globalStyles.pxSm2} ${globalStyles.mxLg4}`
+  };
   const { isLoggedIn } = useGetLoginInfo();
 
   React.useEffect(() => {
@@ -45,7 +57,9 @@ const UnlockPage = ({
       <div className={generatedClasses.cardContainer}>
         <div className={generatedClasses.card}>
           <div className={generatedClasses.cardBody}>
-            <h4 className={generatedClasses.title}>{title}</h4>
+            <h4 className={classNames([globalStyles.h4, globalStyles.title])}>
+              {title}
+            </h4>
             <p className={generatedClasses.description}>{description}</p>
             <ExtensionLoginButton
               callbackRoute={loginRoute}
@@ -69,5 +83,3 @@ const UnlockPage = ({
     </div>
   );
 };
-
-export default withClassNameWrapper(UnlockPage);

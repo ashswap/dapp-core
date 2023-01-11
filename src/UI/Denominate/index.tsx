@@ -1,94 +1,26 @@
 import React from 'react';
-import {
-  denomination as configDenomination,
-  decimals as configDecimals
-} from 'constants/index';
-import { denominate, getEgldLabel, stringIsInteger } from 'utils';
-import { withClassNameWrapper } from 'wrappers/withClassNameWrapper';
+import { MAINNET_EGLD_LABEL } from 'constants/index';
+import { FormatAmount } from 'UI/FormatAmount/FormatAmount';
+import { FormatAmountPropsType } from 'UI/FormatAmount/formatAmount.types';
 
-export interface DenominateType {
-  value: string;
-  showLastNonZeroDecimal?: boolean;
-  showLabel?: boolean;
-  token?: string;
-  decimals?: number;
-  denomination?: number;
-  egldLabel?: string;
-  'data-testid'?: string;
-}
+let deprecationMessageDisplayed = false;
 
-const denominateInvalid = (props: DenominateType) => {
-  return (
-    <span
-      data-testid={
-        props['data-testid'] ? props['data-testid'] : 'denominateComponent'
-      }
-    >
-      <span className='int-amount'>...</span>
-    </span>
-  );
-};
+/**
+ * !!! This function is deprecated. Please use formatAmount instead.
+ * @param props.egldLabel  if not provided, will fallback on **EGLD**
+ */
+export const Denominate = (props: FormatAmountPropsType) => {
+  if (!deprecationMessageDisplayed) {
+    console.warn(
+      '!!! Be aware !!! The "Denominate" component is deprecated. Please use "FormatAmount" instead.'
+    );
 
-const denominateValid = (props: DenominateType, erdLabel: string) => {
-  const { value, showLastNonZeroDecimal = false, showLabel = true } = props;
-  const decimals =
-    props.decimals !== undefined ? props.decimals : configDecimals;
-  const denomination =
-    props.denomination !== undefined ? props.denomination : configDenomination;
-
-  const denominatedValue = denominate({
-    input: value,
-    denomination,
-    decimals,
-    showLastNonZeroDecimal,
-    addCommas: true
-  });
-
-  const valueParts = denominatedValue.split('.');
-  const hasNoDecimals = valueParts.length === 1;
-  const isNotZero = denominatedValue !== '0';
-
-  if (decimals > 0 && hasNoDecimals && isNotZero) {
-    let zeros = '';
-
-    for (let i = 1; i <= decimals; i++) {
-      zeros = zeros + '0';
-    }
-
-    valueParts.push(zeros);
+    deprecationMessageDisplayed = true;
   }
 
-  return (
-    <span
-      data-testid={
-        props['data-testid'] ? props['data-testid'] : 'denominateComponent'
-      }
-    >
-      <span className='int-amount'>{valueParts[0]}</span>
-      {valueParts.length > 1 && (
-        <span className='decimals'>.{valueParts[1]}</span>
-      )}
-      {showLabel && (
-        <span className={`symbol ${props.token ? 'text-muted' : ''}`}>
-          &nbsp;{props.token ? props.token : erdLabel}
-        </span>
-      )}
-    </span>
-  );
+  const egldLabel = props.egldLabel || MAINNET_EGLD_LABEL;
+
+  const formatAmountProps = { ...props, egldLabel };
+
+  return <FormatAmount {...formatAmountProps} />;
 };
-
-const Denominate = (props: DenominateType) => {
-  const { value } = props;
-
-  return !stringIsInteger(value)
-    ? denominateInvalid(props)
-    : denominateValid(props, props.egldLabel || '');
-};
-
-const DenominateWrapper = (props: DenominateType) => {
-  const egldLabel = props.egldLabel || getEgldLabel();
-  const denominateProps = { ...props, egldLabel };
-  return <Denominate {...denominateProps} />;
-};
-
-export default withClassNameWrapper(DenominateWrapper);

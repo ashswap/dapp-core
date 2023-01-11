@@ -1,14 +1,16 @@
-import React, { useRef } from 'react';
-import { useSelector } from 'redux/DappProviderContext';
+import React from 'react';
+import { useSelector } from 'reduxStore/DappProviderContext';
 import {
   isAccountLoadingSelector,
   isLoggedInSelector,
   walletLoginSelector
-} from 'redux/selectors';
+} from 'reduxStore/selectors';
 
 import { RouteType } from 'types';
+import { safeRedirect } from 'utils/redirect';
+import { matchRoute } from './helpers/matchRoute';
 
-const AuthenticatedRoutesWrapper = ({
+export const AuthenticatedRoutesWrapper = ({
   children,
   routes,
   unlockRoute,
@@ -24,15 +26,8 @@ const AuthenticatedRoutesWrapper = ({
   const isAccountLoading = useSelector(isAccountLoadingSelector);
 
   const walletLogin = useSelector(walletLoginSelector);
-  const { pathname } = window.location;
 
-  const authenticatedRoutesRef = useRef(
-    routes.filter((route) => Boolean(route.authenticatedRoute))
-  );
-
-  const isOnAuthenticatedRoute = authenticatedRoutesRef.current.some(
-    ({ path }) => pathname === path
-  );
+  const isOnAuthenticatedRoute = matchRoute(routes, window.location.pathname);
 
   const shouldRedirect =
     isOnAuthenticatedRoute && !isLoggedIn && walletLogin == null;
@@ -45,12 +40,10 @@ const AuthenticatedRoutesWrapper = ({
     if (onRedirect) {
       onRedirect(unlockRoute);
     } else {
-      window.location.href = unlockRoute;
+      safeRedirect(unlockRoute);
     }
     return null;
   }
 
   return <>{children}</>;
 };
-
-export default AuthenticatedRoutesWrapper;

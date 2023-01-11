@@ -1,39 +1,47 @@
 import { useEffect, useState } from 'react';
-import { HWProvider, ExtensionProvider } from '@elrondnetwork/erdjs';
+import { ExtensionProvider } from '@elrondnetwork/erdjs-extension-provider';
+import { HWProvider } from '@elrondnetwork/erdjs-hw-provider';
+import { getNetworkConfigFromApi } from 'apiCalls';
+import { useWalletConnectLogin } from 'hooks/login/useWalletConnectLogin';
+import { useWalletConnectV2Login } from 'hooks/login/useWalletConnectV2Login';
 import {
-  setExternalProviderAsAccountProvider,
-  setAccountProvider
+  setAccountProvider,
+  setExternalProviderAsAccountProvider
 } from 'providers/accountProvider';
+import { loginAction } from 'reduxStore/commonActions';
+import { useDispatch, useSelector } from 'reduxStore/DappProviderContext';
 import {
-  getNetworkConfigFromProxyProvider,
-  getProxyProvider
-} from 'providers/proxyProvider';
-import { getLedgerConfiguration, newWalletProvider } from 'providers/utils';
-import { loginAction } from 'redux/commonActions';
-import { useDispatch, useSelector } from 'redux/DappProviderContext';
+  addressSelector,
+  ledgerAccountSelector
+} from 'reduxStore/selectors/accountInfoSelectors';
 import {
   loginMethodSelector,
   walletConnectLoginSelector,
-  networkSelector,
   walletLoginSelector,
-  addressSelector,
-  ledgerAccountSelector,
   ledgerLoginSelector,
   isLoggedInSelector
-} from 'redux/selectors';
+} from 'reduxStore/selectors/loginInfoSelectors';
+import { networkSelector } from 'reduxStore/selectors/networkConfigSelectors';
 import {
   setAccount,
   setIsAccountLoading,
   setAccountLoadingError,
   setLedgerAccount,
   setWalletLogin,
-  setChainID
-} from 'redux/slices';
-import { useWalletConnectLogin } from 'services/login/useWalletConnectLogin';
-import { LoginMethodsEnum } from 'types/enums';
-import { getAddress, getAccount, getLatestNonce, logout } from 'utils';
+  setChainID,
+  setTokenLoginSignature
+} from 'reduxStore/slices';
+import { LoginMethodsEnum } from 'types/enums.types';
+import { logout } from 'utils';
+import {
+  getAddress,
+  getAccount,
+  getLatestNonce,
+  newWalletProvider,
+  getLedgerConfiguration
+} from 'utils/account';
 
-export default function ProviderInitializer() {
+export function ProviderInitializer() {
   const network = useSelector(networkSelector);
   const walletConnectLogin = useSelector(walletConnectLoginSelector);
   const loginMethod = useSelector(loginMethodSelector);
@@ -47,7 +55,6 @@ export default function ProviderInitializer() {
     dataEnabled: boolean;
   }>();
 
-  const proxy = getProxyProvider();
   const dispatch = useDispatch();
 
   const { callbackRoute, logoutRoute } = walletConnectLogin
@@ -59,6 +66,11 @@ export default function ProviderInitializer() {
     logoutRoute
   });
 
+  const [initWalletConnectV2LoginProvider] = useWalletConnectV2Login({
+    callbackRoute,
+    logoutRoute
+  });
+
   useEffect(() => {
     refreshChainID();
   }, [network]);
@@ -66,7 +78,6 @@ export default function ProviderInitializer() {
   useEffect(() => {
     initializeProvider();
   }, [loginMethod]);
-
   useEffect(() => {
     fetchAccount();
   }, [address, isLoggedIn]);
@@ -76,16 +87,15 @@ export default function ProviderInitializer() {
     setLedgerAccountInfo();
   }, [ledgerAccount, isLoggedIn, ledgerData]);
 
-  function refreshChainID() {
-    getNetworkConfigFromProxyProvider()
-      .then((networkConfig) => {
-        if (networkConfig) {
-          dispatch(setChainID(networkConfig.ChainID.valueOf()));
-        }
-      })
-      .catch((e: any) => {
-        console.error('To do ', e);
-      });
+  async function refreshChainID() {
+    try {
+      const networkConfig = await getNetworkConfigFromApi();
+      if (networkConfig) {
+        dispatch(setChainID(networkConfig.erd_chain_id));
+      }
+    } catch (err) {
+      console.error('failed refreshing chainId ', err);
+    }
   }
 
   function setLedgerAccountInfo() {
@@ -109,7 +119,7 @@ export default function ProviderInitializer() {
         if (account) {
           dispatch(
             setAccount({
-              balance: account.balance.toString(),
+              ...account,
               address,
               nonce: account.nonce.valueOf()
             })
@@ -124,12 +134,12 @@ export default function ProviderInitializer() {
   }
 
   async function tryAuthenticateWalletUser() {
-    try {
-      if (walletLogin != null) {
-        const provider = newWalletProvider(network.walletAddress);
+    const provider = newWalletProvider(network.walletAddress);
+    setAccountProvider(provider);
+    if (walletLogin != null) {
+      try {
         const address = await getAddress();
         if (address) {
-          setAccountProvider(provider);
           dispatch(
             loginAction({ address, loginMethod: LoginMethodsEnum.wallet })
           );
@@ -137,22 +147,45 @@ export default function ProviderInitializer() {
           if (account) {
             dispatch(
               setAccount({
-                balance: account.balance.toString(),
-                address,
+                ...account,
                 nonce: getLatestNonce(account)
               })
             );
           }
         }
-        dispatch(setWalletLogin(null));
+        parseWalletSignature();
+      } catch (e) {
+        console.error('Failed authenticating wallet user ', e);
       }
-    } catch (e) {
-      console.error('Failed authenticating wallet user ', e);
+      dispatch(setWalletLogin(null));
     }
   }
 
+  function parseWalletSignature() {
+    let params: any = {};
+    if (window?.location?.search) {
+      const urlSearchParams = new URLSearchParams(window.location.search);
+      params = Object.fromEntries(urlSearchParams as any);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { signature, loginToken, address, ...remainingParams } = params;
+
+    if (signature) {
+      dispatch(setTokenLoginSignature(signature));
+    }
+    clearWalletLoginHistory(remainingParams);
+  }
+
+  function clearWalletLoginHistory(remainingParams: any) {
+    const newUrlParams = new URLSearchParams(remainingParams).toString();
+    const { pathname } = window.location;
+    const newSearch = newUrlParams ? `?${newUrlParams}` : '';
+    const fullPath = pathname ? `${pathname}${newSearch}` : './';
+    window.history.replaceState({}, document.title, fullPath);
+  }
+
   async function getInitializedHwWalletProvider() {
-    const hwWalletP = new HWProvider(proxy);
+    const hwWalletP = new HWProvider();
     let isInitialized = hwWalletP.isInitialized();
     if (!isInitialized) {
       isInitialized = await hwWalletP.init();
@@ -215,9 +248,9 @@ export default function ProviderInitializer() {
         initWalletLoginProvider(false);
         break;
       }
-      case LoginMethodsEnum.wallet: {
-        const provider = newWalletProvider(network.walletAddress);
-        setAccountProvider(provider);
+
+      case LoginMethodsEnum.walletconnectv2: {
+        initWalletConnectV2LoginProvider(false);
         break;
       }
 
@@ -231,10 +264,12 @@ export default function ProviderInitializer() {
         break;
       }
 
+      case LoginMethodsEnum.wallet:
       case LoginMethodsEnum.none: {
         tryAuthenticateWalletUser();
         break;
       }
+
       default:
         return;
     }
